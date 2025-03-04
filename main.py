@@ -76,7 +76,6 @@ def new_user(database:dict)->bool:
     return True
 
 
-# TODO: fix login to work with functionality split between new_user and login
 def login(database) -> bool:
     '''Prompts user for username and password.
     Returns True on a successful login; False otherwise'''
@@ -91,35 +90,31 @@ def login(database) -> bool:
     # Check if username is in database
     try:
         database[username]
-        # If username has tried to login too many times in X amount of time
-        # Lock them out
-        if database[username]["logins"] > 5 and database[username]["time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
-            print("Account Locked: Too many login attempts!")
-            return False
-        # If username is in database, prompt for password
-
-        password = input("Enter your password\n>> ") # Moved the print statement here because of some errors I was getting
-
-        if not check_hash(password, database[username]["password_hash"]): # check if password entered matches the one connected with the user name(returns true or false)
-            print("Try again.") # returns false
-            if database[username]["time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
-                database[username]["time"] = str(dt.datetime.now())
-                database[username]["logins"] += 1
-                update_database(database)
-                return False
-            # If last login was longer than lockout_timer minutes ago,
-            # reset logins counter to 1
-            else: # returns true
-                database[username]["time"] = str(dt.datetime.now())
-                database[username]["logins"] = 1
-                update_database(database)
-                return False
-    # If username is not in database, prompt for password;
-    # then add username and password to database
     except KeyError:
         print("Invalid Email.")
         return False
 
+    # If username has tried to login too many times in X amount of time
+    # Lock them out
+    if database[username]["Logins"] > 5 and database[username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
+        print("Account Locked: Too many login attempts!")
+        return False
+
+    # If username is in database, prompt for password
+    password = get_password("Enter Password: ")
+
+    if not check_hash(password, database[username]["Password_Hash"]): # check if password entered matches the one connected with the user name(returns true or false)
+        print("Try Again.") # returns false
+        if database[username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
+            database[username]["Time"] = str(dt.datetime.now())
+            database[username]["Logins"] += 1
+            return False
+        # If last login was longer than lockout_timer minutes ago,
+        # reset logins counter to 1
+        else: # returns true
+            database[username]["Time"] = str(dt.datetime.now())
+            database[username]["Logins"] = 1
+            return False
 
     # Name is in database; password is correct;
     # reset login attempts to 0
