@@ -44,19 +44,8 @@ def login() -> bool:
     # not increment the "logins" value.
     lockout_timer = 1
 
-    # Try to open the database file
-    # If it doesn't exist, create it
-    try:
-        with open("database.json") as json_data:
-            database = json.load(json_data)
-    except FileNotFoundError:
-        file = open("database.json", "w")
-        new_database = { }
-        json_database = json.dumps(new_database, indent=4)
-        file.write(json_database)
-        file.close()
-        database = new_database
-
+    # Get Full Name
+    full_name = input("Enter Full Name: ")
     # Get username
     username = input("Enter username\n>> ")
 
@@ -109,8 +98,13 @@ def login() -> bool:
 # Start #
 #########
 if __name__ == "__main__":
+    # empty database
+    database = {}
+
     while True:
-        if login():
+        if not database.keys():
+            new_user(database)
+        elif login(database):
             # TODO: do stuff once logged in
             break
 
