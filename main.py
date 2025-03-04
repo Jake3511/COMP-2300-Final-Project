@@ -2,12 +2,17 @@ import datetime as dt
 import json
 import base64
 import bcrypt
+import pwinput
+
+
+SALT = bcrypt.gensalt() # used to generate a random number
 
 
 # Optional "LockOut" Exception
 class LockOut(Exception):
     def __init__(self, message):
         super().__init__(message)
+
 
 def get_hashed_password(password):
     '''Gets password from parameter;
@@ -28,26 +33,60 @@ def check_hash(password, hashed_password):
     print(stored_hash_bytes)
     return bcrypt.checkpw(password, stored_hash_bytes) # returns a bool type that checks if password in database is equal to the password entered
 
-def update_database(database: dict) -> None:
-    '''Update the database with new information'''
-    file = open("database.json", "w")
-    json_database = json.dumps(database, indent=4)
-    file.write(json_database)
-    file.close()
 
-def login() -> bool:
+def get_password(msg)->str:
+    password = pwinput.pwinput(prompt=msg, mask="*")
+    return get_hashed_password(password) # Moved another input statement here for the same error I was getting before
+
+
+def new_user(database:dict)->bool:
+    '''Creates a new user and adds them to the Database'''
+    # Get Full Name
+    full_name = input("Enter Full Name: ")
+    # Get username
+    username = input("Enter Email Address: ")
+
+    passwd1 = ""
+    passwd2 = "a"
+
+    n = 0
+    while not passwd1 == passwd2:
+        n += 1
+        passwd1 = get_password("Enter Password: ")
+        passwd2 = get_password("Re-enter Password: ")
+
+        if not passwd1 == passwd2:
+            print("\nPassword Mis-match.")
+            print("Try Again.\n")
+
+        if n > 5:
+            print("Password Attempts Exceeded")
+            return False
+
+    print("\nPasswords Match.")
+    print("User Registered.")
+
+    database[username] = {
+        "Full_Name": full_name,
+        "Password": passwd1,
+        "Logins": 0,
+        "Time": str(dt.datetime.now())
+    }
+
+    return True
+
+
+# TODO: fix login to work with functionality split between new_user and login
+def login(database) -> bool:
     '''Prompts user for username and password.
     Returns True on a successful login; False otherwise'''
 
-    # lockout_timer is the number of minutes a lockout lasts for
+    # Lockout_timer is the number of minutes a lockout lasts for
     # and also the amount of time you must wait between login attempts to
     # not increment the "logins" value.
     lockout_timer = 1
 
-    # Get Full Name
-    full_name = input("Enter Full Name: ")
-    # Get username
-    username = input("Enter username\n>> ")
+    username = input("Enter Email Address: ")
 
     # Check if username is in database
     try:
@@ -78,12 +117,7 @@ def login() -> bool:
     # If username is not in database, prompt for password;
     # then add username and password to database
     except KeyError:
-        password = get_hashed_password(input("Enter your password\n>> ")) # Moved another input statement here for the same error I was getting before
-        print(password) # used for testing
-        database[username] = {"password_hash": password,
-                          "logins": 0,
-                          "time": str(dt.datetime.now())}
-        update_database(database)
+        print("Invalid Email.")
         return False
 
 
@@ -103,9 +137,12 @@ if __name__ == "__main__":
 
     while True:
         if not database.keys():
-            new_user(database)
+            if not new_user(database):
+                break
         elif login(database):
             # TODO: do stuff once logged in
             break
+    print("Goodbye.")
+
 
 
