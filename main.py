@@ -19,19 +19,20 @@ def get_hashed_password(password):
     Hashes password;
     Returns password hash'''
 
-    password = password.encode('utf-8') # 
-    salt = salt = bcrypt.gensalt() # used to generate a random number
-    hashed_password = bcrypt.hashpw(password, salt) # hashed the password using the generated number(salt)
-    return base64.b64encode(hashed_password).decode('utf-8') 
+    password = password.encode('utf-8') #
+    hashed_password = bcrypt.hashpw(password, SALT) # hashed the password using the generated number(SALT)
+    return base64.b64encode(hashed_password).decode('utf-8')
     # return password in json formatted string (was giving me an error when tried to save binary string in json format)
 
+
 def check_hash(password, hashed_password):
-    password = password.encode('utf-8')
+    # password = password.encode('utf-8')
 
-    stored_hash_bytes = base64.b64decode(hashed_password) # decoded the hashed password back into binary format to compare with hashed password in database
+    # stored_hash_bytes = base64.b64decode(hashed_password) # decoded the hashed password back into binary format to compare with hashed password in database
 
-    print(stored_hash_bytes)
-    return bcrypt.checkpw(password, stored_hash_bytes) # returns a bool type that checks if password in database is equal to the password entered
+    # print(stored_hash_bytes)
+    # return bcrypt.checkpw(password, stored_hash_bytes) # returns a bool type that checks if password in database is equal to the password entered
+    return password == hashed_password
 
 
 def get_password(msg)->str:
@@ -44,7 +45,7 @@ def new_user(database:dict)->bool:
     # Get Full Name
     full_name = input("Enter Full Name: ")
     # Get username
-    username = input("Enter Email Address: ")
+    username = input("Enter Email Address: ").lower()
 
     passwd1 = ""
     passwd2 = "a"
@@ -86,7 +87,7 @@ def login(database) -> bool:
     # not increment the "logins" value.
     lockout_timer = 1
 
-    username = input("Enter Email Address: ")
+    username = input("Enter Email Address: ").lower()
 
     # Check if username is in database
     try:
