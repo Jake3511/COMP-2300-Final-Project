@@ -1,5 +1,4 @@
 import datetime as dt
-import json
 import base64
 import bcrypt
 import pwinput
@@ -65,11 +64,11 @@ def new_user(database:dict)->bool:
             return False
 
     print("\nPasswords Match.")
-    print("User Registered.")
+    print("User Registered.\n")
 
     database[username] = {
         "Full_Name": full_name,
-        "Password": passwd1,
+        "Password_Hash": passwd1,
         "Logins": 0,
         "Time": str(dt.datetime.now())
     }
@@ -124,8 +123,8 @@ def login(database) -> bool:
 
     # Name is in database; password is correct;
     # reset login attempts to 0
-    database[username]["logins"] = 0
-    update_database(database)
+    database[username]["Time"] = str(dt.datetime.now())
+    database[username]["Logins"] = 0
     return True
 
 
@@ -133,7 +132,7 @@ def login(database) -> bool:
 # Start #
 #########
 if __name__ == "__main__":
-    # empty database
+    # Empty database
     database = {}
 
     while True:
