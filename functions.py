@@ -6,6 +6,7 @@ import pwinput
 
 SALT = bcrypt.gensalt() # used to generate a random number
 
+ACTION_LIST = ["help", "add", "list", "send", "exit"]
 
 # Optional "LockOut" Exception
 class LockOut(Exception):
@@ -41,10 +42,7 @@ def get_password(msg)->str:
 
 def new_user(database:dict)->bool:
     '''Creates a new user and adds them to the Database'''
-    # Get Full Name
-    full_name = input("Enter Full Name: ")
-    # Get username
-    username = input("Enter Email Address: ").lower()
+    full_name, username = add_email()
 
     passwd1 = ""
     passwd2 = "a"
@@ -66,7 +64,8 @@ def new_user(database:dict)->bool:
     print("\nPasswords Match.")
     print("User Registered.\n")
 
-    database[username] = {
+    database["User"] = {}
+    database["User"][username] = {
         "Full_Name": full_name,
         "Password_Hash": passwd1,
         "Logins": 0,
@@ -85,59 +84,90 @@ def login(database) -> bool:
     # not increment the "logins" value.
     lockout_timer = 1
 
+    print("Login:")
     username = input("Enter Email Address: ").lower()
 
     # Check if username is in database
     try:
-        database[username]
+        database["User"][username]
     except KeyError:
         print("Invalid Email.")
         return False
 
     # If username has tried to login too many times in X amount of time
     # Lock them out
-    if database[username]["Logins"] > 5 and database[username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
+    if database["User"][username]["Logins"] > 5 and database["User"][username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
         print("Account Locked: Too many login attempts!")
         return False
 
     # If username is in database, prompt for password
     password = get_password("Enter Password: ")
 
-    if not check_hash(password, database[username]["Password_Hash"]): # check if password entered matches the one connected with the user name(returns true or false)
+    if not check_hash(password, database["User"][username]["Password_Hash"]): # check if password entered matches the one connected with the user name(returns true or false)
         print("Try Again.") # returns false
-        if database[username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
-            database[username]["Time"] = str(dt.datetime.now())
-            database[username]["Logins"] += 1
+        if database["User"][username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
+            database["User"][username]["Time"] = str(dt.datetime.now())
+            database["User"][username]["Logins"] += 1
             return False
         # If last login was longer than lockout_timer minutes ago,
         # reset logins counter to 1
         else: # returns true
-            database[username]["Time"] = str(dt.datetime.now())
-            database[username]["Logins"] = 1
+            database["User"][username]["Time"] = str(dt.datetime.now())
+            database["User"][username]["Logins"] = 1
             return False
 
     # Name is in database; password is correct;
     # reset login attempts to 0
-    database[username]["Time"] = str(dt.datetime.now())
-    database[username]["Logins"] = 0
+    database["User"][username]["Time"] = str(dt.datetime.now())
+    database["User"][username]["Logins"] = 0
     return True
 
 
-#########
-# Start #
-#########
-if __name__ == "__main__":
-    # Empty database
-    database = {}
+def secure_drop(database):
+    print("Welcome to SecureDrop")
+    print('Type "help" For Commands\n')
 
     while True:
-        if not database.keys():
-            if not new_user(database):
-                break
-        elif login(database):
-            # TODO: do stuff once logged in
-            break
-    print("Goodbye.")
+        command = input("secure_drop> ").lower()
+        if command in ACTION_LIST:
+            actions(ACTION_LIST.index(command), database)
+        else:
+            print("Command Not recognized. Please try again.")
 
 
+def actions(command, database):
+    match ACTION_LIST[command]:
+        case "help":
+            print('\t"add" -> Add a new contact')
+            print('\t"list" -> List all online contacts')
+            print('\t"send" -> Transfer file to contact')
+            print('\t"exit" -> Exit SecureDrop')
+        case "add":
+            full_name, email = add_email("\t")
+            try:
+                database["Contacts"].append([full_name, email])
+            except KeyError:
+                database["Contacts"] = []
+                database["Contacts"].append([full_name, email])
+        case "list": # TODO: flesh out later in semester
+            try:
+                for contact, email in database["Contacts"]:
+                    print(f"\t* {contact} <{email}>")
+            except KeyError:
+                print("\tContact List Is Empty.")
+            pass
+        case "send":
+            pass
+        case "exit":
+            print("Goodbye.")
+            exit(0)
+
+
+def add_email(indent=""):
+    # Get Full Name
+    full_name = input(f"{indent}Enter Full Name: ")
+    # Get username
+    username = input(f"{indent}Enter Email Address: ").lower()
+
+    return full_name, username
 
