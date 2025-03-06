@@ -14,7 +14,7 @@ class LockOut(Exception):
         super().__init__(message)
 
 
-def get_hashed_password(password):
+def get_hashed_password(password:str)->str:
     '''Gets password from parameter;
     Hashes password;
     Returns password hash'''
@@ -25,7 +25,7 @@ def get_hashed_password(password):
     # return password in json formatted string (was giving me an error when tried to save binary string in json format)
 
 
-def check_hash(password, hashed_password):
+def check_hash(password:str, hashed_password:str)->bool:
     # password = password.encode('utf-8')
 
     # stored_hash_bytes = base64.b64decode(hashed_password) # decoded the hashed password back into binary format to compare with hashed password in database
@@ -35,7 +35,7 @@ def check_hash(password, hashed_password):
     return password == hashed_password
 
 
-def get_password(msg)->str:
+def get_password(msg:str)->str:
     password = pwinput.pwinput(prompt=msg, mask="*")
     return get_hashed_password(password) # Moved another input statement here for the same error I was getting before
 
@@ -75,14 +75,14 @@ def new_user(database:dict)->bool:
     return True
 
 
-def login(database) -> bool:
+def login(database:dict)->bool:
     '''Prompts user for username and password.
     Returns True on a successful login; False otherwise'''
 
     # Lockout_timer is the number of minutes a lockout lasts for
     # and also the amount of time you must wait between login attempts to
     # not increment the "logins" value.
-    lockout_timer = 1
+    lockout_timer = 1 # TODO: make longer
 
     print("Login:")
     username = input("Enter Email Address: ").lower()
@@ -123,7 +123,7 @@ def login(database) -> bool:
     return True
 
 
-def secure_drop(database):
+def secure_drop(database:dict)->None:
     print("Welcome to SecureDrop")
     print('Type "help" For Commands\n')
 
@@ -135,7 +135,7 @@ def secure_drop(database):
             print("Command Not recognized. Please try again.")
 
 
-def actions(command, database):
+def actions(command:str, database:dict)->None:
     match ACTION_LIST[command]:
         case "help":
             print('\t"add" -> Add a new contact')
@@ -163,7 +163,7 @@ def actions(command, database):
             exit(0)
 
 
-def add_email(indent=""):
+def add_email(indent="")->list:
     # Get Full Name
     full_name = input(f"{indent}Enter Full Name: ")
     # Get username
