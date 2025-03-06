@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 from functions import new_user, login, secure_drop
 
 #########
