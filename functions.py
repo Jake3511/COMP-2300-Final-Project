@@ -2,6 +2,7 @@ import datetime as dt
 import base64
 import bcrypt
 import pwinput
+import re
 
 
 SALT = bcrypt.gensalt() # used to generate a random number
@@ -25,24 +26,19 @@ def get_hashed_password(password:str)->str:
     # return password in json formatted string (was giving me an error when tried to save binary string in json format)
 
 
-def check_hash(password:str, hashed_password:str)->bool:
-    # password = password.encode('utf-8')
-
-    # stored_hash_bytes = base64.b64decode(hashed_password) # decoded the hashed password back into binary format to compare with hashed password in database
-
-    # print(stored_hash_bytes)
-    # return bcrypt.checkpw(password, stored_hash_bytes) # returns a bool type that checks if password in database is equal to the password entered
-    return password == hashed_password
+def comp_str(p1:str, p2:str)->bool:
+    return p1 == p2
 
 
 def get_password(msg:str)->str:
+    # TODO: add password strength validation?
     password = pwinput.pwinput(prompt=msg, mask="*")
     return get_hashed_password(password) # Moved another input statement here for the same error I was getting before
 
 
 def new_user(database:dict)->bool:
     '''Creates a new user and adds them to the Database'''
-    full_name, username = add_email()
+    full_name, username = get_name_and_email()
 
     passwd1 = ""
     passwd2 = "a"
@@ -103,7 +99,7 @@ def login(database:dict)->bool:
     # If username is in database, prompt for password
     password = get_password("Enter Password: ")
 
-    if not check_hash(password, database["User"][username]["Password_Hash"]): # check if password entered matches the one connected with the user name(returns true or false)
+    if not comp_str(password, database["User"][username]["Password_Hash"]): # check if password entered matches the one connected with the user name(returns true or false)
         print("Try Again.") # returns false
         if database["User"][username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
             database["User"][username]["Time"] = str(dt.datetime.now())
@@ -143,7 +139,7 @@ def actions(command:str, database:dict)->None:
             print('\t"send" -> Transfer file to contact')
             print('\t"exit" -> Exit SecureDrop')
         case "add":
-            full_name, email = add_email("\t")
+            full_name, email = get_name_and_email("\t")
             try:
                 database["Contacts"].append([full_name, email])
             except KeyError:
@@ -167,6 +163,7 @@ def get_name_and_email(indent="")->list:
     # Get Full Name
     full_name = input(f"{indent}Enter Full Name: ")
     # Get username/email
+    # TODO: validate password via regex
     username = input(f"{indent}Enter Email Address: ").lower()
 
     return full_name, username
