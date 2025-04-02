@@ -163,10 +163,10 @@ def actions(command:str, database:dict)->None:
             exit(0)
 
 
-def add_email(indent="")->list:
+def get_name_and_email(indent="")->list:
     # Get Full Name
     full_name = input(f"{indent}Enter Full Name: ")
-    # Get username
+    # Get username/email
     username = input(f"{indent}Enter Email Address: ").lower()
 
     return full_name, username
