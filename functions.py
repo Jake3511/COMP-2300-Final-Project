@@ -167,4 +167,3 @@ def get_name_and_email(indent="")->list:
     username = input(f"{indent}Enter Email Address: ").lower()
 
     return full_name, username
-
