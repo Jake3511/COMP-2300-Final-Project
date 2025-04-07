@@ -20,7 +20,7 @@ def get_hashed_password(password:str)->str:
     Hashes password;
     Returns password hash'''
 
-    password = password.encode('utf-8') #
+    password = password.encode('utf-8') 
     hashed_password = bcrypt.hashpw(password, SALT) # hashed the password using the generated number(SALT)
     return base64.b64encode(hashed_password).decode('utf-8')
     # return password in json formatted string (was giving me an error when tried to save binary string in json format)

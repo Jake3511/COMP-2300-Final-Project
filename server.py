@@ -28,7 +28,7 @@ def main():
 
         try:
             print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server(Will show the IP and Port)
-            
+
         finally:
             connection.close()
 
