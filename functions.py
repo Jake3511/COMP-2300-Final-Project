@@ -9,6 +9,7 @@ SALT = bcrypt.gensalt() # used to generate a random number
 
 ACTION_LIST = ["help", "add", "list", "send", "exit"]
 
+
 # Optional "LockOut" Exception
 class LockOut(Exception):
     def __init__(self, message):
@@ -80,7 +81,24 @@ def login(database:dict)->bool:
     # not increment the "logins" value.
     lockout_timer = 1 # TODO: make longer
 
-    print("Login:")
+    flag:bool = False
+    while (flag == False):
+        print("Login:")
+        if (len(database) == 0):
+            print("No users are registered with this client.")
+            ques = input("Do you want to register a new user (y/n)?\n")
+            if ((ques).lower() == 'y'):
+                new_user(database)
+            elif (ques.lower() == 'n'):
+                flag = True
+        else:
+            ques = input("Do you want to register a new user (y/n)?\n")
+            if ((ques).lower() == 'y'):
+                new_user(database)
+            elif (ques.lower() == 'n'):
+                flag = True
+
+    
     username = input("Enter Email Address: ").lower()
 
     # Check if username is in database
@@ -158,7 +176,7 @@ def actions(command:str, database:dict)->None:
             print("Goodbye.")
             exit(0)
 
-
+    
 def get_name_and_email(indent="")->list:
     # Get Full Name
     full_name = input(f"{indent}Enter Full Name: ")

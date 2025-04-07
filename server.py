@@ -1,5 +1,6 @@
 import sys
 import socket
+from functions import get_hashed_password, comp_str, get_password, login, secure_drop, actions, get_name_and_email
 
 def main():
     # Creates the TCP socket(AF_INET means address family: IPv4/127.0.0.1, and SOCK_STREAM means socket type, TCP)
@@ -22,12 +23,15 @@ def main():
     sock.bind(server_address) # Tells the socket to listen on this IP address and port(Reserves the two for listening for events)
     sock.listen(1) # This actually starts the listening event, unlike the above line which initalizes the socket to listen for the IP and Port.
 
+    user_database = {} # initial dictionary, will be used to save client information, including the email and password for future logins
     while True:
         print("WAITING FOR CONNECTION")
         connection, client_address = sock.accept() # This waits for a client to acually connect to server
 
         try:
             print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server(Will show the IP and Port)
+            login(user_database)
+
 
         finally:
             connection.close()
