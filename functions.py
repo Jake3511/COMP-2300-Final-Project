@@ -54,13 +54,21 @@ def new_user(database:dict)->bool:
             print("Try Again.\n")
 
         if n > 5:
-            print("Password Attempts Exceeded")
+            print("Password Attempts Exceeded.")
+            print("Goodbye.")
             return False
 
     print("\nPasswords Match.")
+
+    try: # Check if username already in use
+        if username in list(database["User"].values()):
+            print("User Already Registered.")
+            return True
+    except KeyError: # Catch if database is empty
+        database["User"] = {}
+
     print("User Registered.\n")
 
-    database["User"] = {}
     database["User"][username] = {
         "Full_Name": full_name,
         "Password_Hash": passwd1,
@@ -78,7 +86,14 @@ def login(database:dict)->bool:
     # Lockout_timer is the number of minutes a lockout lasts for
     # and also the amount of time you must wait between login attempts to
     # not increment the "logins" value.
-    lockout_timer = 1 # TODO: make longer
+    lockout_timer = 1 # Leave as 1 min for testing and demo purposes
+
+    ret_user = input("New or Returning User? (n/r): ").lower()
+    while not ret_user in ["r", "n"]:
+        ret_user = input("New or Returning User? (n/r): ").lower()
+    if ret_user == "n":
+        if not new_user(database):
+            return False
 
     print("Login:")
     username = input("Enter Email Address: ").lower()
@@ -90,8 +105,8 @@ def login(database:dict)->bool:
         print("Invalid Email.")
         return False
 
-    # If username has tried to login too many times in X amount of time
-    # Lock them out
+    # If username has tried to login too many times in [lockout_timer]
+    # amount of time lock them out
     if database["User"][username]["Logins"] > 5 and database["User"][username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
         print("Account Locked: Too many login attempts!")
         return False
@@ -116,22 +131,24 @@ def login(database:dict)->bool:
     # reset login attempts to 0
     database["User"][username]["Time"] = str(dt.datetime.now())
     database["User"][username]["Logins"] = 0
+
+    secure_drop(database, username)
     return True
 
 
-def secure_drop(database:dict)->None:
+def secure_drop(database:dict, username:str)->None:
     print("Welcome to SecureDrop")
-    print('Type "help" For Commands\n')
+    print('Type "help" For Commands')
 
     while True:
-        command = input("secure_drop> ").lower()
+        command = input("\nsecure_drop> ").lower()
         if command in ACTION_LIST:
-            actions(ACTION_LIST.index(command), database)
+            actions(ACTION_LIST.index(command), username, database)
         else:
             print("Command Not recognized. Please try again.")
 
 
-def actions(command:str, database:dict)->None:
+def actions(command:int, username:str, database:dict)->None:
     match ACTION_LIST[command]:
         case "help":
             print('\t"add" -> Add a new contact')
@@ -140,15 +157,30 @@ def actions(command:str, database:dict)->None:
             print('\t"exit" -> Exit SecureDrop')
         case "add":
             full_name, email = get_name_and_email("\t")
+            added_back = False
             try:
-                database["Contacts"].append([full_name, email])
+                try:
+                    if database["User"][email]:
+                        added_back = True
+                        for _, user, added_back_bool in database["User"][email]["Contacts"]:
+                            if email == user:
+                                added_back_bool = True
+                except KeyError:
+                    added_back = False
+                database["User"][username]["Contacts"].append([full_name, email, added_back])
             except KeyError:
-                database["Contacts"] = []
-                database["Contacts"].append([full_name, email])
+                database["User"][username]["Contacts"] = []
+                database["User"][username]["Contacts"].append([full_name, email, added_back])
         case "list": # TODO: flesh out later in semester
             try:
-                for contact, email in database["Contacts"]:
-                    print(f"\t* {contact} <{email}>")
+                contacts = database["User"][username]["Contacts"]
+                friend = False
+                for contact, email, added_back_bool in contacts:
+                    if added_back_bool == True:
+                        friend = True
+                        print(f"\t* {contact} <{email}>")
+                if friend == False:
+                    print("No Contacts Added You Back")
             except KeyError:
                 print("\tContact List Is Empty.")
             pass
@@ -168,3 +200,10 @@ def get_name_and_email(indent="")->list:
 
     return full_name, username
 
+
+if __name__ == "__main__":
+    database = {}
+    if login(database):
+        print("Goodbye.")
+    else:
+        print("Login Failed; Goodbye.")
