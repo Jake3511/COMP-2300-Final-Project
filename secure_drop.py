@@ -17,6 +17,7 @@ if __name__ == "__main__":
             # validate
             # decrypt message
         # print rec_msg[1] to command line
+        
         # send new message to Server
             # if msg == "exit", break
             # else:
