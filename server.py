@@ -1,6 +1,7 @@
 import sys
 import socket
-from functions import login
+import functions as f
+import key_gen as k
 
 def main():
     # Creates the TCP socket(AF_INET means address family: IPv4/127.0.0.1, and SOCK_STREAM means socket type, TCP)
@@ -28,23 +29,23 @@ def main():
         print("WAITING FOR CONNECTION")
         connection, client_address = sock.accept() # This waits for a client to acually connect to server
 
+        # recieve message in following form:
+        # [logged_in:bool, command:str, data:list]
         try:
-            print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server(Will show the IP and Port)
-            login(user_database)
-
+            print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
+            f.login(user_database)
 
         finally:
             connection.close()
-
-# launch server (done)
-
-# move database to server (not done)
 
 
 #########
 # Start #
 #########
 if __name__ == "__main__":
+    if not open("private_key.pem", "rb"):
+        k.gen_keys()
+
     main()
     # server spin up
         # pull ip and port from "sys.argv[1]" and "sys.agrv[2]"

@@ -21,7 +21,7 @@ def get_hashed_password(password:str)->str:
     Hashes password;
     Returns password hash'''
 
-    password = password.encode('utf-8') 
+    password = password.encode('utf-8')
     hashed_password = bcrypt.hashpw(password, SALT) # hashed the password using the generated number(SALT)
     return base64.b64encode(hashed_password).decode('utf-8')
     # return password in json formatted string (was giving me an error when tried to save binary string in json format)
@@ -37,7 +37,7 @@ def get_password(msg:str)->str:
     return get_hashed_password(password) # Moved another input statement here for the same error I was getting before
 
 
-def new_user(database:dict)->bool:
+def new_user()->list:
     '''Creates a new user and adds them to the Database'''
     full_name, username = get_name_and_email()
 
@@ -56,47 +56,78 @@ def new_user(database:dict)->bool:
 
         if n > 5:
             print("Password Attempts Exceeded.")
-            print("Goodbye.")
-            return False
+            return [False, None, None, None]
 
     print("\nPasswords Match.")
+    return [True, username, full_name, passwd1]
+    # try: # Check if username already in use
+    #     if username in list(database["User"].values()):
+    #         print("User Already Registered.")
+    #         return True
+    # except KeyError: # Catch if database is empty
+    #     database["User"] = {}
 
-    try: # Check if username already in use
-        if username in list(database["User"].values()):
-            print("User Already Registered.")
-            return True
-    except KeyError: # Catch if database is empty
-        database["User"] = {}
+    # print("User Registered.\n")
 
-    print("User Registered.\n")
+    # database["User"][username] = {
+    #     "Full_Name": full_name,
+    #     "Password_Hash": passwd1,
+    #     "Logins": 0,
+    #     "Time": str(dt.datetime.now())
+    # }
 
-    database["User"][username] = {
-        "Full_Name": full_name,
-        "Password_Hash": passwd1,
-        "Logins": 0,
-        "Time": str(dt.datetime.now())
-    }
-
-    return True
+    # return True
 
 
-def login(database:dict)->bool:
+def login_client()->list:
+    failed = [False, None, None, None, None]
+    ret_user = input("New or Returning User? (n/r): ").lower()
+    while not ret_user in ["n", "r"]:
+        ret_user = input("New or Returning User? (n/r): ").lower()
+    new:bool = ret_user == "n"
+
+    try:
+        success = True
+        if new:
+            success, email, full_name, password = new_user()
+        else:
+            full_name, email = get_name_and_email()
+            password = get_password()
+
+        if success:
+            return [True, ret_user, email, full_name, password]
+        else:
+            return failed
+    except:
+        return failed
+
+
+def login_server(database:dict, new:bool, user:list, password:str)->list:
     '''Prompts user for username and password.
     Returns True on a successful login; False otherwise'''
+    # user = [email, full_name]
 
     # Lockout_timer is the number of minutes a lockout lasts for
     # and also the amount of time you must wait between login attempts to
     # not increment the "logins" value.
     lockout_timer = 1 # Leave as 1 min for testing and demo purposes
 
-    ret_user = input("New or Returning User? (n/r): ").lower()
-    while not ret_user in ["r", "n"]:
-        ret_user = input("New or Returning User? (n/r): ").lower()
-    if ret_user == "n":
-        if not new_user(database):
-            return False
+    # ret_user = input("New or Returning User? (n/r): ").lower()
+    # while not ret_user in ["r", "n"]:
+    #     ret_user = input("New or Returning User? (n/r): ").lower()
+    # if ret_user == "n":
+    #     if not new_user(database):
+    #         return False
 
-    flag:bool = False
+    if new:
+        if user[0] in database["User"]:
+            return [True, "User already in use."]
+        else:
+            pass
+    else:
+        pass
+
+    flag = False
     while (flag == False):
         print("Login:")
         if (len(database) == 0):
@@ -113,7 +144,7 @@ def login(database:dict)->bool:
             elif (ques.lower() == 'n'):
                 flag = True
 
-    
+
     username = input("Enter Email Address: ").lower()
 
     # Check if username is in database
@@ -208,7 +239,7 @@ def actions(command:int, username:str, database:dict)->None:
             print("Goodbye.")
             exit(0)
 
-    
+
 def get_name_and_email(indent="")->list:
     # Get Full Name
     full_name = input(f"{indent}Enter Full Name: ")
