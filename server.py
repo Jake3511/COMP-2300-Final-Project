@@ -1,6 +1,6 @@
 import sys
 import socket
-from functions import get_hashed_password, comp_str, get_password, login, secure_drop, actions, get_name_and_email
+from functions import login
 
 def main():
     # Creates the TCP socket(AF_INET means address family: IPv4/127.0.0.1, and SOCK_STREAM means socket type, TCP)
