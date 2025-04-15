@@ -3,6 +3,10 @@ import socket
 import functions as f
 import key_gen as k
 
+
+ACTION_LIST = ["help", "add", "list", "send", "exit"]
+
+
 def main():
     # Creates the TCP socket(AF_INET means address family: IPv4/127.0.0.1, and SOCK_STREAM means socket type, TCP)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,16 +28,51 @@ def main():
     sock.bind(server_address) # Tells the socket to listen on this IP address and port(Reserves the two for listening for events)
     sock.listen(1) # This actually starts the listening event, unlike the above line which initalizes the socket to listen for the IP and Port.
 
-    user_database = {} # initial dictionary, will be used to save client information, including the email and password for future logins
-    while True:
+     # initial dictionary, will be used to save client information, including the email and password for future logins
+    user_database = {}
+    user_database["User"] = {}
+
+
+    email = ""
+    logged_in = False
+    while not logged_in:
         print("WAITING FOR CONNECTION")
         connection, client_address = sock.accept() # This waits for a client to acually connect to server
 
+        logged_in, command, data = connection.recv(1024)
         # recieve message in following form:
         # [logged_in:bool, command:str, data:list]
         try:
             print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-            f.login(user_database)
+            # [logged_in:bool, command:str, data:list]
+            logged_in, command, data = connection.recv(1024)
+
+            if command == "login":
+                new, user, password = data
+                email = user[0]
+
+                success, message = f.login_server(user_database, new, user, password)
+
+                if success:
+                    logged_in = True
+
+                connection.send(bytes([False, message]))
+            else:
+                connection.send(bytes([False, "Please Log In."]))
+        finally:
+            connection.close()
+
+    while True:
+        try:
+            print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
+            # [logged_in:bool, command:str, data:list]
+            logged_in, command, data = connection.recv(1024)
+
+            if command in ACTION_LIST:
+                msg = f.actions_server(user_database, command, email, data)
+                connection.send(bytes([True, msg]))
+            else:
+                connection.send(bytes([True, "Invalid Command."]))
 
         finally:
             connection.close()
@@ -43,23 +82,9 @@ def main():
 # Start #
 #########
 if __name__ == "__main__":
-    if not open("private_key.pem", "rb"):
+    try:
+        open("private_key.pem", "rb")
+    except FileNotFoundError:
         k.gen_keys()
 
     main()
-    # server spin up
-        # pull ip and port from "sys.argv[1]" and "sys.agrv[2]"
-    # create empty database
-    # while True:
-        # try:
-            # listen for message
-            # receive message from a recipient
-                # validate message
-                # decode message
-                # if message is approved command - execute
-            # create rec_msg[bool, string]
-                # encode message
-            # send message back to same recipient
-        # catch KeyInterrupt:
-            # exit(0)
-    pass
