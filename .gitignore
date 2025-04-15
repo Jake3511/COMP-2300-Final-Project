@@ -176,3 +176,4 @@ cython_debug/
 # Misc.
 .DS_Store
 .vscode
+*.pem
