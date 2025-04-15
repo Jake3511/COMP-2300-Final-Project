@@ -1,7 +1,7 @@
 import sys
 import socket
 import functions as f
-import fcrypt
+import fcrypt as fc
 
 
 ACTION_LIST = ["help", "add", "list", "send", "exit"]
@@ -20,7 +20,7 @@ def login_loop():
 
 
 
-def main_loop():
+def main_loop(username:str)->None:
     print('Welcome to SecureDrop')
     print('Type "help" For Commands')
 
@@ -56,9 +56,11 @@ def main_loop():
                     case "add":
                         full_name, email = f.get_name_and_email()
                         s.send(bytes([True, "add", [email, full_name]]))
-                    case "list": # TODO: flesh out
+                    case "list":
                         s.send(bytes([True, "list", []]))
                     case "send": # TODO: flesh out
+                        file_name = input("\tEnter file name, including path")
+                        fc.enc_dec(username, "encrypt", "private", file_name, "./file_to_send.bin")
                         pass
             else:
                 print("Command Not Recognized.")
@@ -93,9 +95,11 @@ s.connect((host, port))
 # print(rec_msg)
 
 msg = login_loop()
+# msg  = [logged_in:bool, command:str, [ret_user, [email, full_name], password]]
+username = msg[2][1][0] # username = email
 
 s.send(bytes(msg))
 
-main_loop()
+main_loop(username)
 
 s.close()

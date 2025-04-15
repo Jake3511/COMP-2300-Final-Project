@@ -82,10 +82,10 @@ def main():
 # Start #
 #########
 if __name__ == "__main__":
-    try:
-        open("private_key.pem", "rb")
-    except FileNotFoundError:
-        k.gen_keys()
+    # try:
+    #     open("private_key.pem", "rb")
+    # except FileNotFoundError:
+    #     k.gen_keys()
 
     try:
         main()
