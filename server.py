@@ -87,4 +87,8 @@ if __name__ == "__main__":
     except FileNotFoundError:
         k.gen_keys()
 
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nShutting Server Down.")
+        sys.exit(0)
