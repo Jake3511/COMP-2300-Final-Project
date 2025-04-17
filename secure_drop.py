@@ -1,5 +1,6 @@
-import sys
+import json
 import socket
+import sys
 import functions as f
 import fcrypt as fc
 
@@ -26,15 +27,15 @@ def main_loop(username:str)->None:
 
     while True:
         s.listen()
-        msg = s.recv(1024)
-        msg.decode()
+        msg = s.recv(1024).decode("utf-8")
+        json_msg = json.loads(msg)
 
-        if not msg[0]:
-            print(msg[1])
+        if not json_msg[0]:
+            print(json_msg[1])
             sys.exit(2)
 
         # print rec_msg[1] to command line
-        print(msg[1])
+        print(json_msg[1])
 
         # receive message from Server
             # validate
@@ -70,36 +71,47 @@ def main_loop(username:str)->None:
 #########
 # Start #
 #########
-s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-#family, type
-#he SOCK_STREAM means connection-oriented TCP protocol.
-print("Socket connection: success")
-host = sys.argv[1] #local host
-try:
-    port = int(sys.argv[2]) #port number
-except ValueError:
-    print("Port must be an Integer.")
-    sys.exit(1)
-s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR, 1)
-print("client has been assigned socket name: ", s.getsockname())
+if __name__ == "__main__":
+    s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    #family, type
+    #he SOCK_STREAM means connection-oriented TCP protocol.
+    print("Socket connection: success")
+    host = sys.argv[1] #local host
+    try:
+        port = int(sys.argv[2]) #port number
+    except ValueError:
+        print("Port must be an Integer.")
+        sys.exit(1)
+    s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR, 1)
+    print("client has been assigned socket name: ", s.getsockname())
 
-rec_msg = str()
-msg = str()
+    rec_msg = str()
+    msg = str()
 
-s.connect((host, port))
-# connect to Server
+    s.connect((host, port))
+    # connect to Server
 
-# s.listen()
-# rec_msg = s.recv(1024)
-# rec_msg.decode()
-# print(rec_msg)
+    # s.listen()
+    # rec_msg = s.recv(1024)
+    # rec_msg.decode()
+    # print(rec_msg)
 
-msg = login_loop()
-# msg  = [logged_in:bool, command:str, [ret_user, [email, full_name], password]]
-username = msg[2][1][0] # username = email
+    # msg  = [logged_in:bool, command:str, [ret_user, [email, full_name], password]]
+    # logged_in, command, data = login_loop()
+    # ret_user, user, passwrd = data
+    # email, full_name = user
 
-s.send(bytes(msg))
+    msg = login_loop()
 
-main_loop(username)
+    email = msg[2][1][0]
 
-s.close()
+    json_msg = json.dumps(msg)
+
+
+    s.send(bytes(json_msg.encode("utf-8")))
+
+    s.close()
+
+    main_loop(email)
+
+    s.close()

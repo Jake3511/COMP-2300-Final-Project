@@ -1,5 +1,6 @@
-import sys
+import json
 import socket
+import sys
 import functions as f
 import key_gen as k
 
@@ -31,21 +32,31 @@ def main():
      # initial dictionary, will be used to save client information, including the email and password for future logins
     user_database = {}
     user_database["User"] = {}
+    user_database["Logged_In"] = {}
 
 
     email = ""
-    logged_in = False
-    while not logged_in:
+    while True:
         print("WAITING FOR CONNECTION")
         connection, client_address = sock.accept() # This waits for a client to acually connect to server
 
-        logged_in, command, data = connection.recv(1024)
-        # recieve message in following form:
-        # [logged_in:bool, command:str, data:list]
         try:
+            logged_in = user_database["Logged_In"][client_address]
+        except KeyError:
+            user_database["Logged_In"][client_address] = False
+            logged_in = user_database["Logged_In"][client_address]
+
+        while not logged_in:
+            msg_in = connection.recv(1024).decode()
+            logged_in, command, data = json.loads(msg_in)
+            # recieve message in following form:
+            # [logged_in:bool, command:str, data:list]
+
             print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
             # [logged_in:bool, command:str, data:list]
-            logged_in, command, data = connection.recv(1024)
+
+            # msg_in = connection.recv(1024).decode()
+            # logged_in, command, data = json.loads(msg_in)
 
             if command == "login":
                 new, user, password = data
@@ -56,37 +67,28 @@ def main():
                 if success:
                     logged_in = True
 
-                connection.send(bytes([False, message]))
+                connection.send(bytes(json.dumps([False, message]), "utf-8"))
             else:
-                connection.send(bytes([False, "Please Log In."]))
-        finally:
-            connection.close()
+                connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
 
-    while True:
-        try:
-            print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-            # [logged_in:bool, command:str, data:list]
-            logged_in, command, data = connection.recv(1024)
+        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
+        # [logged_in:bool, command:str, data:list]
+        msg_in = connection.recv(1024).decode()
+        logged_in, command, data = json.loads(msg_in)
 
-            if command in ACTION_LIST:
-                msg = f.actions_server(user_database, command, email, data)
-                connection.send(bytes([True, msg]))
-            else:
-                connection.send(bytes([True, "Invalid Command."]))
+        if command in ACTION_LIST:
+            msg = f.actions_server(user_database, command, email, data)
+            connection.send(bytes(json.dumps([True, msg]), "utf-8"))
+        else:
+            connection.send(bytes(json.dumps([True, "Invalid Command."]), "utf-8"))
 
-        finally:
-            connection.close()
+        connection.close()
 
 
 #########
 # Start #
 #########
 if __name__ == "__main__":
-    # try:
-    #     open("private_key.pem", "rb")
-    # except FileNotFoundError:
-    #     k.gen_keys()
-
     try:
         main()
     except KeyboardInterrupt:

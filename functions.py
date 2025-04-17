@@ -34,7 +34,7 @@ def comp_str(p1:str, p2:str)->bool:
 def get_password(msg:str)->str:
     # TODO: add password strength validation?
     password = pwinput.pwinput(prompt=msg, mask="*")
-    return get_hashed_password(password) # Moved another input statement here for the same error I was getting before
+    return get_hashed_password(password)
 
 
 def new_user()->list:
@@ -117,6 +117,8 @@ def login_server(database:dict, new:bool, user:list, password:str)->list:
         if email in list(database["User"].values()):
             return login_server(database, False, user, password)
         else:
+            database["User"][email] = {}
+
             database["User"][email]["Password"] = password
 
             database["User"][email]["Time"] = str(dt.datetime.now())
@@ -231,7 +233,7 @@ def actions_server(database:dict, command:int, username:str, data:list)->list:
             except KeyError:
                 database["User"][username]["Contacts"] = []
                 database["User"][username]["Contacts"].append([full_name, email, added_back])
-            pass
+
         case "list": # TODO: add online test
             try:
                 contacts = database["User"][username]["Contacts"]
