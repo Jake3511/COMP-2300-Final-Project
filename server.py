@@ -69,7 +69,7 @@ def main():
                 if success:
                     logged_in = True
 
-                connection.send(bytes(json.dumps([False, message]), "utf-8"))
+                connection.send(bytes(json.dumps([success, message]), "utf-8"))
             else:
                 connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
             connection.close()
