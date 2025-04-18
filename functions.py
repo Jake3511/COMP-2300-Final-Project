@@ -112,10 +112,10 @@ def login_client()->list:
         else:
             email = input("Enter Email Address: ")
             full_name = None
-            password = get_password()
+            password = get_password("Enter Password: ")
 
         if success:
-            return [True, ret_user, email, full_name, password]
+            return [True, new, email, full_name, password]
         else:
             return failed
     except:
