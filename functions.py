@@ -68,23 +68,6 @@ def new_user()->list:
 
     print("\nPasswords Match.")
     return [True, username, full_name, passwd1]
-    # try: # Check if username already in use
-    #     if username in list(database["User"].values()):
-    #         print("User Already Registered.")
-    #         return True
-    # except KeyError: # Catch if database is empty
-    #     database["User"] = {}
-
-    # print("User Registered.\n")
-
-    # database["User"][username] = {
-    #     "Full_Name": full_name,
-    #     "Password_Hash": passwd1,
-    #     "Logins": 0,
-    #     "Time": str(dt.datetime.now())
-    # }
-
-    # return True
 
 
 def login_client()->list:
@@ -114,12 +97,12 @@ def login_server(database:dict, new:bool, user:list, password:str)->list:
     '''Prompts user for username and password.
     Returns True on a successful login; False otherwise'''
 
-    email = user[0]
+    email, full_name = user
 
     # Lockout_timer is the number of minutes a lockout lasts for
     # and also the amount of time you must wait between login attempts to
     # not increment the "logins" value.
-    lockout_timer = 1 # Leave as 1 min for testing and demo purposes
+    lockout_timer = 5
 
     if new:
         if email in list(database[USER].values()):
@@ -197,7 +180,7 @@ def actions_server(database:dict, command:int, username:str, data:list)->list:
                         msg.append("\n")
                     return msg
                 if friend == False:
-                    return "No Contacts Added You Back"
+                    return "\tNo Contacts Added You Back"
             except KeyError:
                 return "\tContact List Is Empty."
 
