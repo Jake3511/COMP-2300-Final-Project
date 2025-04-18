@@ -54,9 +54,9 @@ def actions_server(database:dict, command:int, username:str, data:list)->list:
                 for contact, email, added_back_bool in contacts:
                     if added_back_bool == True:
                         friend = True
-                        msg.append(f"\t* {contact} <{email}>")
+                        msg += f"\t* {contact} <{email}>"
                     if not contacts[-1] == [contact, email, added_back_bool]:
-                        msg.append("\n")
+                        msg += "\n"
                     return msg
                 if friend == False:
                     return "\tNo Contacts Added You Back"
@@ -123,9 +123,6 @@ def login_client()->list:
 
 
 def login_server(database:dict, new:bool, user:list, password:str)->list:
-    '''Prompts user for username and password.
-    Returns True on a successful login; False otherwise'''
-
     email, full_name = user
 
     # Lockout_timer is the number of minutes a lockout lasts for

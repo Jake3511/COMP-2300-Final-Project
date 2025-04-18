@@ -48,9 +48,9 @@ def main_loop(username:str)->None:
                 match command:
                     case "help":
                         msg = '\t"add" -> Add a new contact'
-                        msg.append('\n\t"list" -> List all online contacts')
-                        msg.append('\n\t"send" -> Transfer file to contact')
-                        msg.append('\n\t"exit" -> Exit SecureDrop')
+                        msg += '\n\t"list" -> List all online contacts'
+                        msg += '\n\t"send" -> Transfer file to contact'
+                        msg += '\n\t"exit" -> Exit SecureDrop'
                         print(msg)
                     case "add":
                         full_name, email = f.get_name_and_email()
