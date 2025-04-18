@@ -9,6 +9,14 @@ SALT = bcrypt.gensalt() # used to generate a random number
 
 ACTION_LIST = ["help", "add", "list", "send", "exit"]
 
+USER = "User"
+CONTACTS = "Contacts"
+FULL_NAME = "Full_Name"
+PASSWORD = "Password"
+TIME = "Time"
+LOGINS = "Logins"
+
+
 
 # Optional "LockOut" Exception
 class LockOut(Exception):
@@ -114,102 +122,38 @@ def login_server(database:dict, new:bool, user:list, password:str)->list:
     lockout_timer = 1 # Leave as 1 min for testing and demo purposes
 
     if new:
-        if email in list(database["User"].values()):
+        if email in list(database[USER].values()):
             return login_server(database, False, user, password)
         else:
-            database["User"][email] = {}
+            database[USER][email] = {}
+            database[USER][email][FULL_NAME] = full_name
+            database[USER][email][PASSWORD] = password
+            database[USER][email][TIME] = str(dt.datetime.now())
+            database[USER][email][LOGINS] = 1
+            database[USER][email][CONTACTS] = {}
 
-            database["User"][email]["Password"] = password
+            return [True, "New User Added."]
+    else:
+        try:
+            database[USER][email]
+        except KeyError:
+            return [False, "Invalid Email."]
 
-            database["User"][email]["Time"] = str(dt.datetime.now())
-
-            database["User"][email]["Logins"] = 1
-
-            database["User"][email]["Contacts"] = {}
-
-            return [True, "New User Added"]
-
-    try:
-        database["User"][email]
-    except KeyError:
-        return [False, "Invalid Email"]
-
-    if database["User"][email]["Logins"] > 5 and database["User"][email]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
+    if database[USER][email][LOGINS] > 5 and database[USER][email][TIME] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
         return [False, "Account Locked: Too Many Log In Attempts!"]
 
-    passwd_right = comp_str(password, database["User"][email]["Password"])
+    passwd_correct = comp_str(password, database[USER][email][PASSWORD])
 
-    if passwd_right:
-        return [True, "Log In Successfully"]
+    if passwd_correct:
+        database[USER][email][TIME] = str(dt.datetime.now())
+        database[USER][email][LOGINS] = 1
 
-    return [False, "Log In Failed"]
+        return [True, "Log In Successfully."]
+    else:
+        database[USER][email][TIME] = str(dt.datetime.now())
+        database[USER][email][LOGINS] += 1
 
-    # flag = False
-    # while (flag == False):
-    #     print("Login:")
-    #     if (len(database) == 0):
-    #         print("No users are registered with this client.")
-    #         ques = input("Do you want to register a new user (y/n)?\n")
-    #         if ((ques).lower() == 'y'):
-    #             new_user(database)
-    #         elif (ques.lower() == 'n'):
-    #             flag = True
-    #     else:
-    #         ques = input("Do you want to register a new user (y/n)?\n")
-    #         if ((ques).lower() == 'y'):
-    #             new_user(database)
-    #         elif (ques.lower() == 'n'):
-    #             flag = True
-
-
-    # username = input("Enter Email Address: ").lower()
-
-    # # Check if username is in database
-    # try:
-    #     database["User"][username]
-    # except KeyError:
-    #     print("Invalid Email.")
-    #     return False
-
-    # # If username has tried to login too many times in [lockout_timer]
-    # # amount of time lock them out
-    # if database["User"][username]["Logins"] > 5 and database["User"][username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
-    #     print("Account Locked: Too many login attempts!")
-    #     return False
-
-    # # If username is in database, prompt for password
-    # password = get_password("Enter Password: ")
-
-    # if not comp_str(password, database["User"][username]["Password_Hash"]): # check if password entered matches the one connected with the user name(returns true or false)
-    #     print("Try Again.") # returns false
-    #     if database["User"][username]["Time"] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
-    #         database["User"][username]["Time"] = str(dt.datetime.now())
-    #         database["User"][username]["Logins"] += 1
-    #         return False
-    #     # If last login was longer than lockout_timer minutes ago,
-    #     # reset logins counter to 1
-    #     else: # returns true
-    #         database["User"][username]["Time"] = str(dt.datetime.now())
-    #         database["User"][username]["Logins"] = 1
-    #         return False
-
-    # # Name is in database; password is correct;
-    # # reset login attempts to 0
-    # database["User"][username]["Time"] = str(dt.datetime.now())
-    # database["User"][username]["Logins"] = 0
-
-    # secure_drop(database, username)
-    # return True
-
-
-# def secure_drop(database:dict, username:str, command:str)->None:
-#     print("Welcome to SecureDrop")
-#     print('Type "help" For Commands')
-
-#     if command in ACTION_LIST:
-#         actions(ACTION_LIST.index(command), username, database)
-#     else:
-#         return [True, "Command Not recognized. Please try again."]
+        return [False, "Log In Failed."]
 
 
 def actions_server(database:dict, command:int, username:str, data:list)->list:
@@ -217,26 +161,32 @@ def actions_server(database:dict, command:int, username:str, data:list)->list:
         case "add":
             email, full_name = data
             added_back = False
+
+            for _, user_email, _ in database[USER][username][CONTACTS]:
+                if email == user_email:
+                    return [True, "Contact Already Added."]
+
             try:
                 try:
-                    if database["User"][email]:
+                    if database[USER][email]:
                         added_back = True
-                        for _, user, added_back_bool in database["User"][email]["Contacts"]:
+                        for _, user, added_back_bool in database[USER][email][CONTACTS]:
                             if email == user:
-                                database["User"][email]["Contacts"][user][2] = True
+                                database[USER][email][CONTACTS][user][2] = True
                 except KeyError:
                     added_back = False
 
-                database["User"][username]["Contacts"].append([full_name, email, added_back])
-                return [True, "Contact Added."]
+                database[USER][username][CONTACTS].append([full_name, email, added_back])
 
             except KeyError:
-                database["User"][username]["Contacts"] = []
-                database["User"][username]["Contacts"].append([full_name, email, added_back])
+                database[USER][username][CONTACTS] = []
+                database[USER][username][CONTACTS].append([full_name, email, added_back])
+
+            return [True, "Contact Added."]
 
         case "list": # TODO: add online test
             try:
-                contacts = database["User"][username]["Contacts"]
+                contacts = database[USER][username][CONTACTS]
                 friend = False
                 msg = str()
                 for contact, email, added_back_bool in contacts:

@@ -7,6 +7,8 @@ import key_gen as k
 
 ACTION_LIST = ["help", "add", "list", "send", "exit"]
 
+LOGGED_IN = "Logged_In"
+
 
 def main():
     # Creates the TCP socket(AF_INET means address family: IPv4/127.0.0.1, and SOCK_STREAM means socket type, TCP)
@@ -31,8 +33,8 @@ def main():
 
      # initial dictionary, will be used to save client information, including the email and password for future logins
     user_database = {}
-    user_database["User"] = {}
-    user_database["Logged_In"] = {}
+    user_database[f.USER] = {}
+    user_database[LOGGED_IN] = {}
 
 
     email = ""
@@ -41,10 +43,10 @@ def main():
         connection, client_address = sock.accept() # This waits for a client to acually connect to server
 
         try:
-            logged_in = user_database["Logged_In"][client_address]
+            logged_in = user_database[LOGGED_IN][client_address]
         except KeyError:
-            user_database["Logged_In"][client_address] = False
-            logged_in = user_database["Logged_In"][client_address]
+            user_database[LOGGED_IN][client_address] = False
+            logged_in = user_database[LOGGED_IN][client_address]
 
         while not logged_in:
             msg_in = connection.recv(1024).decode()
