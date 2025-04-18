@@ -19,23 +19,21 @@ def login_loop():
             return [False, "login", [ret_user, [email, full_name], password]]
 
 
-
-
 def main_loop(username:str)->None:
     print('Welcome to SecureDrop')
     print('Type "help" For Commands')
 
     while True:
-        s.listen()
         msg = s.recv(1024).decode("utf-8")
         json_msg = json.loads(msg)
 
-        if not json_msg[0]:
-            print(json_msg[1])
-            sys.exit(2)
-
         # print rec_msg[1] to command line
         print(json_msg[1])
+
+        if json_msg[0] == False:
+            print("Goodbye.")
+            sys.exit(2)
+
 
         # receive message from Server
             # validate
@@ -45,7 +43,7 @@ def main_loop(username:str)->None:
             command = input("secure drop> ").lower()
             if command == "exit":
                 print("Goodbye.")
-                exit(1)
+                exit(0)
             if command in ACTION_LIST:
                 match command:
                     case "help":
@@ -59,9 +57,10 @@ def main_loop(username:str)->None:
                         s.send(bytes([True, "add", [email, full_name]]))
                     case "list":
                         s.send(bytes([True, "list", []]))
-                    case "send": # TODO: flesh out
+                    case "send":
                         file_name = input("\tEnter file name, including path")
                         fc.enc_dec(username, "encrypt", "private", file_name, "./file_to_send.bin")
+                        # TODO: finish
                         pass
             else:
                 print("Command Not Recognized.")
@@ -85,22 +84,10 @@ if __name__ == "__main__":
     s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR, 1)
     print("client has been assigned socket name: ", s.getsockname())
 
-    rec_msg = str()
-    msg = str()
-
     s.connect((host, port))
     # connect to Server
 
-    # s.listen()
-    # rec_msg = s.recv(1024)
-    # rec_msg.decode()
-    # print(rec_msg)
-
     # msg  = [logged_in:bool, command:str, [ret_user, [email, full_name], password]]
-    # logged_in, command, data = login_loop()
-    # ret_user, user, passwrd = data
-    # email, full_name = user
-
     msg = login_loop()
 
     email = msg[2][1][0]
@@ -109,8 +96,6 @@ if __name__ == "__main__":
 
 
     s.send(bytes(json_msg.encode("utf-8")))
-
-    s.close()
 
     main_loop(email)
 

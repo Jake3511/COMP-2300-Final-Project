@@ -48,7 +48,7 @@ def main():
             user_database[LOGGED_IN][client_address] = False
             logged_in = user_database[LOGGED_IN][client_address]
 
-        while not logged_in:
+        if not logged_in:
             msg_in = connection.recv(1024).decode()
             logged_in, command, data = json.loads(msg_in)
             # recieve message in following form:
@@ -72,11 +72,10 @@ def main():
                 connection.send(bytes(json.dumps([False, message]), "utf-8"))
             else:
                 connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
+            connection.close()
+            continue
 
         print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-        # [logged_in:bool, command:str, data:list]
-        msg_in = connection.recv(1024).decode()
-        logged_in, command, data = json.loads(msg_in)
 
         if command in ACTION_LIST:
             msg = f.actions_server(user_database, command, email, data)
