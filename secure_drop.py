@@ -54,9 +54,9 @@ def main_loop(username:str)->None:
                         print(msg)
                     case "add":
                         full_name, email = f.get_name_and_email()
-                        s.send(bytes([True, "add", [email, full_name]]))
+                        s.send(bytes(json.dumps([True, "add", [email, full_name]]), "utf-8"))
                     case "list":
-                        s.send(bytes([True, "list", []]))
+                        s.send(bytes(json.dumps([True, "list", []]), "utf-8"))
                     case "send":
                         file_name = input("\tEnter file name, including path")
                         fc.enc_dec(username, "encrypt", "private", file_name, "./file_to_send.bin")
