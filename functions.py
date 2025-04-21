@@ -1,17 +1,21 @@
-import datetime as dt
 import base64
 import bcrypt
+import datetime as dt
+import key_gen as k
 import pwinput
-import re
 
+
+# TODO: change return user to sending unhashed password
+# TODO: compare unhashed password to hashed password for return users
+    # in login_server
 
 SALT = bcrypt.gensalt() # used to generate a random number
 
 ACTION_LIST = ["help", "add", "list", "send", "exit"]
 
-
 CONTACTS = "Contacts"
 FULL_NAME = "Full_Name"
+LOGIN_COM = "Login"
 LOGINS = "Logins"
 PASSWORD = "Password"
 TIME = "Time"
@@ -57,8 +61,9 @@ def actions_server(database:dict, command:int, username:str, data:list)->list:
                         msg += f"\t* {contact} <{email}>"
                     if not contacts[-1] == [contact, email, added_back_bool]:
                         msg += "\n"
+                if friend:
                     return msg
-                if friend == False:
+                else:
                     return "\tNo Contacts Added You Back"
             except KeyError:
                 return "\tContact List Is Empty."
@@ -71,14 +76,29 @@ def comp_str(p1:str, p2:str)->bool:
     return p1 == p2
 
 
+def get_email(indent="")->str:
+    while True:
+        email1 = input(f"{indent}Enter Email Address: ").lower()
+        email2 = input(f"{indent}Enter Email Address Again: ").lower()
+
+        if email1 == email2:
+            return email1
+        else:
+            print("Emails Did Not Match.")
+            continue
+
+
 def get_hashed_password(password:str)->str:
     '''Gets password from parameter;
     Hashes password;
     Returns password hash'''
 
     password = password.encode('utf-8')
-    hashed_password = bcrypt.hashpw(password, SALT) # hashed the password using the generated number(SALT)
+    salt = open("./Salt.bin", "rb").read()
+    hashed_password = bcrypt.hashpw(password, salt) # hashed the password using the generated number(SALT)
     return base64.b64encode(hashed_password).decode('utf-8')
+
+    # return bcrypt.hashpw(password, salt) # hashed the password using the generated number(SALT)
     # return password in json formatted string (was giving me an error when tried to save binary string in json format)
 
 
@@ -87,7 +107,7 @@ def get_name_and_email(indent="")->list:
     full_name = input(f"{indent}Enter Full Name: ")
     # Get username/email
     # TODO: validate password via regex
-    username = input(f"{indent}Enter Email Address: ").lower()
+    username = get_email(indent)
 
     return full_name, username
 
@@ -99,6 +119,11 @@ def get_password(msg:str)->str:
 
 
 def login_client()->list:
+    '''Client-side log in function.
+    Generates a list containing;
+    successful_loging:bool, new_user:bool, email:str,
+    full_name:str, hashed_password:str'''
+
     failed = [False, None, None, None, None]
     ret_user = input("New or Returning User? (n/r): ").lower()
     while not ret_user in ["n", "r"]:
@@ -110,7 +135,7 @@ def login_client()->list:
         if new:
             success, email, full_name, password = new_user()
         else:
-            email = input("Enter Email Address: ")
+            email = input("Enter Your Email: ")
             full_name = None
             password = get_password("Enter Password: ")
 
@@ -123,6 +148,13 @@ def login_client()->list:
 
 
 def login_server(database:dict, new:bool, user:list, password:str)->list:
+    '''Server-side log in function.
+    Compares passed in parameters to passed in database.
+    If user is new, vereifies their account doesn't already exist,
+    then add account to datbase.
+    If user already exists, or is not "new",
+    attempt to log in using passed in user and password data.'''
+
     email, full_name = user
 
     # Lockout_timer is the number of minutes a lockout lasts for
@@ -148,17 +180,27 @@ def login_server(database:dict, new:bool, user:list, password:str)->list:
         except KeyError:
             return [False, "Invalid Email."]
 
+    # If user has tried to log in too many time within the
+    # lockout period, return account locked message,
+    # update time of last log in attempt to now,
+    # and stop before checking password
     if database[USER][email][LOGINS] > 5 and database[USER][email][TIME] >= str(dt.datetime.now() - dt.timedelta(minutes=lockout_timer)):
+        database[USER][email][TIME] = str(dt.datetime.now())
         return [False, "Account Locked: Too Many Log In Attempts!"]
 
+    # Validate password
     passwd_correct = comp_str(password, database[USER][email][PASSWORD])
 
+    # If password is correct, set time of last log in to now,
+    # and reset log in attempts to 1
     if passwd_correct:
         database[USER][email][TIME] = str(dt.datetime.now())
         database[USER][email][LOGINS] = 1
 
         return [True, "Log In Successfully."]
     else:
+        # If password is incorrect, set time of last log in to now,
+        # and increment number of log in attempts
         database[USER][email][TIME] = str(dt.datetime.now())
         database[USER][email][LOGINS] += 1
 
@@ -183,8 +225,9 @@ def new_user()->list:
             print("Try Again.\n")
 
         if n > 5:
-            print("Password Attempts Exceeded.")
+            print("\nPassword Attempts Exceeded.")
             return [False, None, None, None]
 
-    print("\nPasswords Match.")
+    print("Passwords Match.")
     return [True, username, full_name, passwd1]
+

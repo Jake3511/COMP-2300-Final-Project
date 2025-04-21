@@ -2,10 +2,9 @@ import json
 import socket
 import sys
 import functions as f
-import key_gen as k
 
 
-ACTION_LIST = ["help", "add", "list", "send", "exit"]
+# TODO: log out client on disconnect or after X amount of time idle
 
 LOGGED_IN = "Logged_In"
 
@@ -36,11 +35,17 @@ def main():
     user_database[f.USER] = {}
     user_database[LOGGED_IN] = {}
 
-
     email = ""
     while True:
         print("WAITING FOR CONNECTION")
         connection, client_address = sock.accept() # This waits for a client to acually connect to server
+
+        msg_in = connection.recv(1024).decode()
+        command, data = json.loads(msg_in)
+        # recieve message in following form:
+        # [command:str, data:list]
+
+        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
 
         try:
             logged_in = user_database[LOGGED_IN][client_address]
@@ -49,25 +54,23 @@ def main():
             logged_in = user_database[LOGGED_IN][client_address]
 
         if not logged_in:
-            msg_in = connection.recv(1024).decode()
-            logged_in, command, data = json.loads(msg_in)
-            # recieve message in following form:
-            # [logged_in:bool, command:str, data:list]
+            connection.send(bytes(json.dumps([True, f.LOGIN_COM]), "utf-8"))
 
-            print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-            # [logged_in:bool, command:str, data:list]
+            connection.close()
+            connection, client_address = sock.accept()
 
-            # msg_in = connection.recv(1024).decode()
-            # logged_in, command, data = json.loads(msg_in)
+            msg_in = connection.recv(1024).decode("utf-8")
+            command, data = json.loads(msg_in)
 
-            if command == "login":
+            if command == f.LOGIN_COM:
                 new, user, password = data
                 email = user[0]
 
                 success, message = f.login_server(user_database, new, user, password)
 
                 if success:
-                    logged_in = True
+                    user_database[LOGGED_IN][client_address] = True
+                    logged_in = user_database[LOGGED_IN][client_address]
 
                 connection.send(bytes(json.dumps([success, message]), "utf-8"))
             else:
@@ -75,11 +78,11 @@ def main():
             connection.close()
             continue
 
-        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-
-        if command in ACTION_LIST:
+        if command in f.ACTION_LIST:
             msg = f.actions_server(user_database, command, email, data)
             connection.send(bytes(json.dumps([True, msg]), "utf-8"))
+        elif command == "ping":
+            connection.send(bytes(json.dumps([True, "ping back"]), "utf-8"))
         else:
             connection.send(bytes(json.dumps([True, "Invalid Command."]), "utf-8"))
 
@@ -90,6 +93,13 @@ def main():
 # Start #
 #########
 if __name__ == "__main__":
+    try:
+        open("./Salt.bin", "rb")
+    except FileNotFoundError:
+        salt = f.SALT
+        with open("./Salt.bin", "wb") as salt_file:
+            salt_file.write(salt)
+
     try:
         main()
     except KeyboardInterrupt:
