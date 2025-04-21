@@ -4,12 +4,15 @@
 Prior to running `server.py` or `secure_drop.py`, pip3 install:
 * base64
 * bcrypt
+* datetime
 * pwinput
-* pycryptodome
-* re
+* pycryptodomex
+  * required for `Crypto` library
+* socket
+* sys
 
 ### To Run
-First launch the server, by running `python3 server.py [ip] [port]`.
+**First** launch the server, by running `python3 server.py [ip] [port]`.
 
 Once the server is running, launch secure_drop once per user, using `python3 secure_drop [server ip] [server port]`
 
