@@ -35,11 +35,6 @@ def main_loop(username:str)->None:
             s.close()
             sys.exit(2)
 
-
-        # receive message from Server
-            # validate
-            # decrypt message
-
         command = input("\nsecure drop> ").lower()
         if command == "exit":
             print("Goodbye.")
@@ -54,12 +49,15 @@ def main_loop(username:str)->None:
                     print(msg)
                 case "add":
                     full_name, email = f.get_name_and_email()
-                    s.send(bytes(json.dumps(["add", [email, full_name]]), "utf-8"))
+                    s.send(bytes(json.dumps(["add", [email, full_name], username]), "utf-8"))
                 case "list":
-                    s.send(bytes(json.dumps(["list", []]), "utf-8"))
+                    s.send(bytes(json.dumps(["list", [], username]), "utf-8"))
                 case "send":
-                    file_name = input("\tEnter file name, including path")
-                    fc.enc_dec(username, "encrypt", "private", file_name, "./file_to_send.bin")
+                    file_name = input("\tEnter file name, including path: ")
+                    try:
+                        fc.enc_dec(username, "encrypt", "private", file_name, "./file_to_send.bin")
+                    except FileNotFoundError:
+                        print("File Not Found.")
                     # TODO: finish
                     pass
         else:
@@ -88,7 +86,7 @@ if __name__ == "__main__":
 
         s.connect((host, port)) # connect to Server
 
-        s.send(bytes(json.dumps(["ping", []]), "utf-8"))
+        s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
 
         # msg_rec = [con't:bool, mesg:str]
         cont, msg_rec = json.loads(s.recv(1024).decode("utf-8"))
@@ -103,15 +101,14 @@ if __name__ == "__main__":
                 sys.exit(1)
 
             data = [new, [email, full_name], password]
-            msg_out = [command, data]
-            json_msg_out = json.dumps(msg_out).encode("utf-8")
+            json_msg_out = json.dumps([command, data, email]).encode("utf-8")
 
             s.send(bytes(json_msg_out))
 
             main_loop(email)
         else:
             email = f.get_email()
-            s.send(bytes(json.dumps(["ping", []]), "utf-8"))
+            s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
             main_loop(email)
 
     except KeyboardInterrupt:
