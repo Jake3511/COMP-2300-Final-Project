@@ -1,12 +1,68 @@
 import json
 import socket
 import sys
+import threading
 import functions as f
+import key_gen as k
 
 
 # TODO: log out client on disconnect or after X amount of time idle
 
 LOGGED_IN = "Logged_In"
+
+
+def handle_client(connection, client_address, user_database):
+    try:
+        try:
+            logged_in = user_database[LOGGED_IN][client_address] # If client is in the database, check if logged in
+        except KeyError:
+            user_database[LOGGED_IN][client_address] = False # If client has never logged in, set their status to false
+
+            logged_in = user_database[LOGGED_IN][client_address] # Refresh the login
+
+        msg_in = connection.recv(1024).decode()
+        command, data, username = json.loads(msg_in)
+        # recieve message in following form:
+        # [command:str, data:list]
+
+        if command == "ping":
+            if not logged_in:
+                connection.send(bytes(json.dumps(True, f.LOGIN_COM), "utf-8"))
+                return
+            else:
+                connection.send(bytes(json.dumps(True, "ping back"), "utf-8"))
+                return
+
+        if not logged_in:
+            print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
+
+            if command == "login":
+                new, user, password = data
+                success, message = f.login_server(user_database, new, user, password)
+
+                if success:
+                    logged_in = True
+
+                connection.send(bytes(json.dumps([success, message]), "utf-8"))
+            else:
+                connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
+            connection.close()
+            return
+
+        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
+
+        if command in f.ACTION_LIST:
+            msg = f.actions_server(user_database, command, username, data)
+            connection.send(bytes(json.dumps([True, msg]), "utf-8"))
+        else:
+            connection.send(bytes(json.dumps([True, "Invalid Command."]), "utf-8"))
+
+        connection.close()
+
+    except Exception as e:
+        print(f"[!] Error with {client_address}: {e}")
+        connection.close()
+
 
 
 def main():
@@ -28,65 +84,25 @@ def main():
     server_address = (ip, port) # Sets server address to the correct IP and Port
     print("Starting up server on %s port %s" % server_address)
     sock.bind(server_address) # Tells the socket to listen on this IP address and port(Reserves the two for listening for events)
-    sock.listen(1) # This actually starts the listening event, unlike the above line which initalizes the socket to listen for the IP and Port.
+    sock.listen(20) # This actually starts the listening event, unlike the above line which initalizes the socket to listen for the IP and Port.
 
      # initial dictionary, will be used to save client information, including the email and password for future logins
     user_database = {}
     user_database[f.USER] = {}
     user_database[LOGGED_IN] = {}
 
-    email = ""
     while True:
         print("WAITING FOR CONNECTION")
         connection, client_address = sock.accept() # This waits for a client to acually connect to server
+        print(connection) # Used for testing, connection is initialized as the socket
+        print(client_address) # Used for testing, client_address is initialized as the ip address and port
+        # Creates a thread that will handle clients one at a time rather than all at once(1 thread for each new user connecting to server)
+        client_thread = threading.Thread(
+            target=handle_client, # calls and passes in a few argumanets to handle client
+            args=(connection, client_address, user_database) # Our connection(socket), our client_address(ip and port), and our user database
+        )
+        client_thread.start() # Starts the thread
 
-        msg_in = connection.recv(1024).decode()
-        command, data = json.loads(msg_in)
-        # recieve message in following form:
-        # [command:str, data:list]
-
-        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-
-        try:
-            logged_in = user_database[LOGGED_IN][client_address]
-        except KeyError:
-            user_database[LOGGED_IN][client_address] = False
-            logged_in = user_database[LOGGED_IN][client_address]
-
-        if not logged_in:
-            connection.send(bytes(json.dumps([True, f.LOGIN_COM]), "utf-8"))
-
-            connection.close()
-            connection, client_address = sock.accept()
-
-            msg_in = connection.recv(1024).decode("utf-8")
-            command, data = json.loads(msg_in)
-
-            if command == f.LOGIN_COM:
-                new, user, password = data
-                email = user[0]
-
-                success, message = f.login_server(user_database, new, user, password)
-
-                if success:
-                    user_database[LOGGED_IN][client_address] = True
-                    logged_in = user_database[LOGGED_IN][client_address]
-
-                connection.send(bytes(json.dumps([success, message]), "utf-8"))
-            else:
-                connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
-            connection.close()
-            continue
-
-        if command in f.ACTION_LIST:
-            msg = f.actions_server(user_database, command, email, data)
-            connection.send(bytes(json.dumps([True, msg]), "utf-8"))
-        elif command == "ping":
-            connection.send(bytes(json.dumps([True, "ping back"]), "utf-8"))
-        else:
-            connection.send(bytes(json.dumps([True, "Invalid Command."]), "utf-8"))
-
-        connection.close()
 
 
 #########
