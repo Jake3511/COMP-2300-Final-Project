@@ -64,7 +64,6 @@ def handle_client(connection, client_address, user_database):
         connection.close()
 
 
-
 def main():
     # Creates the TCP socket(AF_INET means address family: IPv4/127.0.0.1, and SOCK_STREAM means socket type, TCP)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -102,7 +101,6 @@ def main():
             args=(connection, client_address, user_database) # Our connection(socket), our client_address(ip and port), and our user database
         )
         client_thread.start() # Starts the thread
-
 
 
 #########
