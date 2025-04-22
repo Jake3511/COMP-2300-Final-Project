@@ -22,8 +22,8 @@ TIME = "Time"
 USER = "User"
 
 
-def actions_server(database:dict, command:int, username:str, data:list)->list:
-    match ACTION_LIST[command]:
+def actions_server(database:dict, command:str, username:str, data:list)->str:
+    match command:
         case "add":
             email, full_name = data
             added_back = False
@@ -48,7 +48,7 @@ def actions_server(database:dict, command:int, username:str, data:list)->list:
                 database[USER][username][CONTACTS] = []
                 database[USER][username][CONTACTS].append([full_name, email, added_back])
 
-            return [True, "Contact Added."]
+            return "Contact Added."
 
         case "list": # TODO: add online test
             try:
@@ -70,6 +70,8 @@ def actions_server(database:dict, command:int, username:str, data:list)->list:
 
         case "send": # TODO: flesh out
             pass
+        case _:
+            return [True, "\tInvalid Command."]
 
 
 def comp_str(p1:str, p2:str)->bool:
