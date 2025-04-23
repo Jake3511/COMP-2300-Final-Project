@@ -51,8 +51,8 @@ def actions_server(database:dict, command:str, username:str, data:list)->str:
             return "Contact Added."
 
         case "list": # TODO: add online test
-            try:
-                contacts = database[USER][username][CONTACTS]
+            contacts = database[USER][username][CONTACTS]
+            if len(contacts) > 0:
                 friend = False
                 msg = str()
                 for contact, email, added_back_bool in contacts:
@@ -65,7 +65,7 @@ def actions_server(database:dict, command:str, username:str, data:list)->str:
                     return msg
                 else:
                     return "\tNo Contacts Added You Back"
-            except KeyError:
+            else:
                 return "\tContact List Is Empty."
 
         case "send": # TODO: flesh out
@@ -173,7 +173,7 @@ def login_server(database:dict, new:bool, user:list, password:str)->list:
             database[USER][email][PASSWORD] = password
             database[USER][email][TIME] = str(dt.datetime.now())
             database[USER][email][LOGINS] = 1
-            database[USER][email][CONTACTS] = {}
+            database[USER][email][CONTACTS] = []
 
             return [True, "New User Added."]
     else:

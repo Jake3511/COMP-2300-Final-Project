@@ -13,46 +13,51 @@ LOGGED_IN = "Logged_In"
 
 def handle_client(connection, client_address, user_database):
     try:
-        try:
-            logged_in = user_database[LOGGED_IN][client_address] # If client is in the database, check if logged in
-        except KeyError:
-            user_database[LOGGED_IN][client_address] = False # If client has never logged in, set their status to false
+        # try:
+        #     logged_in = user_database[LOGGED_IN][client_address] # If client is in the database, check if logged in
+        # except KeyError:
+        #     user_database[LOGGED_IN][client_address] = False # If client has never logged in, set their status to false
 
-            logged_in = user_database[LOGGED_IN][client_address] # Refresh the login
+        #     logged_in = user_database[LOGGED_IN][client_address] # Refresh the login
 
         msg_in = connection.recv(1024).decode()
         command, data, username = json.loads(msg_in)
         # recieve message in following form:
         # [command:str, data:list, username:str]
+        try:
+            user_database[f.USER][username][f.CONTACTS]
+        except KeyError:
+            user_database[f.USER][username] = {}
+            user_database[f.USER][username][f.CONTACTS] = {}
 
         print("command in:", command) # TODO: Delete
 
-        if command == "ping":
-            print("ping if!") # TODO: Delete
-            if not logged_in:
-                connection.send(bytes(json.dumps([True, f.LOGIN_COM]), "utf-8"))
-            else:
-                connection.send(bytes(json.dumps([True, "ping back"]), "utf-8"))
-            print("Pre-close") # TODO: Delete
-            connection.close()
-            print("Post-close") # TODO: Delete
-            return
-        print("Ping Else!") # TODO: Delete
+        # if command == "ping":
+        #     print("ping if!") # TODO: Delete
+        #     if not logged_in:
+        #         connection.send(bytes(json.dumps([True, f.LOGIN_COM]), "utf-8"))
+        #     else:
+        #         connection.send(bytes(json.dumps([True, "ping back"]), "utf-8"))
+        #     print("Pre-close") # TODO: Delete
+        #     connection.close()
+        #     print("Post-close") # TODO: Delete
+        #     return
+        # print("Ping Else!") # TODO: Delete
 
         print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
 
-        if not logged_in:
-            if command == "login":
-                new, user, password = data
-                success, message = f.login_server(user_database, new, user, password)
+        # if not logged_in:
+        #     if command == "login":
+        #         new, user, password = data
+        #         success, message = f.login_server(user_database, new, user, password)
 
-                logged_in = success
+        #         logged_in = success
 
-                connection.send(bytes(json.dumps([success, message]), "utf-8"))
-            else:
-                connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
-            connection.close()
-            return
+        #         connection.send(bytes(json.dumps([success, message]), "utf-8"))
+        #     else:
+        #         connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
+        #     connection.close()
+        #     return
 
         if command in f.ACTION_LIST:
             msg = f.actions_server(user_database, command, username, data)
@@ -92,7 +97,7 @@ def main():
      # initial dictionary, will be used to save client information, including the email and password for future logins
     user_database = {}
     user_database[f.USER] = {}
-    user_database[LOGGED_IN] = {}
+    # user_database[LOGGED_IN] = {}
 
     while True:
         print("WAITING FOR CONNECTION")
@@ -104,9 +109,7 @@ def main():
             target=handle_client, # calls and passes in a few argumanets to handle client
             args=(connection, client_address, user_database) # Our connection(socket), our client_address(ip and port), and our user database
         )
-        print("Pre-thread start") # TODO: Delete
         client_thread.start() # Starts the thread
-        print("Post-thread start") # TODO: Delete
 
 
 #########

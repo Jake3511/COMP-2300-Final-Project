@@ -21,20 +21,6 @@ def main_loop(username:str)->None:
     print('Type "help" For Commands')
 
     while True:
-        msg = s.recv(1024).decode("utf-8")
-        print("pre-json.loads") # TODO:Delete
-        print("msg:", msg) # TODO:Delete
-        cont, json_msg = json.loads(msg)
-
-        # print receied message to command line
-        if not json_msg == "ping back":
-            print(json_msg)
-
-        if cont == False:
-            print("Goodbye.")
-            s.close()
-            sys.exit(2)
-
         command = input("\nsecure drop> ").lower()
         if command == "exit":
             print("Goodbye.")
@@ -47,6 +33,7 @@ def main_loop(username:str)->None:
                     msg += '\n\t"send" -> Transfer file to contact'
                     msg += '\n\t"exit" -> Exit SecureDrop'
                     print(msg)
+                    continue
                 case "add":
                     full_name, email = f.get_name_and_email()
                     s.send(bytes(json.dumps(["add", [email, full_name], username]), "utf-8"))
@@ -64,19 +51,36 @@ def main_loop(username:str)->None:
             print("Command Not Recognized.")
             print('Type "help" For Commands')
 
+        msg = s.recv(1024).decode("utf-8")
+        print("pre-json.loads") # TODO:Delete
+        print("msg:", msg) # TODO:Delete
+        cont, json_msg = json.loads(msg)
+
+        # print receied message to command line
+        if not json_msg == "ping back":
+            print(json_msg)
+
+        if cont == False:
+            print("Goodbye.")
+            s.close()
+            sys.exit(2)
+
 
 #########
 # Start #
 #########
 if __name__ == "__main__":
+    database = {}
+    database[f.USER] = {}
+
     try:
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        #family, type
-        #he SOCK_STREAM means connection-oriented TCP protocol.
+        # family, type
+        # The SOCK_STREAM means connection-oriented TCP protocol.
         print("Socket connection: success")
-        host = sys.argv[1] #local host
+        host = sys.argv[1] # Server IP
         try:
-            port = int(sys.argv[2]) #port number
+            port = int(sys.argv[2]) # Server port number
         except ValueError:
             print("Port must be an Integer.")
             sys.exit(1)
@@ -84,32 +88,51 @@ if __name__ == "__main__":
         s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR, 1)
         print("client has been assigned socket name: ", s.getsockname())
 
-        s.connect((host, port)) # connect to Server
-
-        s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
-
-        # msg_rec = [con't:bool, mesg:str]
-        cont, msg_rec = json.loads(s.recv(1024).decode("utf-8"))
-
-        if msg_rec == f.LOGIN_COM:
-            success, command, new, email, full_name, password = login_loop()
-
-            if not success:
+        # Login
+        success, command, new, email, full_name, password = login_loop()
+        if not success:
                 print("Login Failed.")
                 print("Goodbye.")
                 s.close()
                 sys.exit(1)
 
-            data = [new, [email, full_name], password]
-            json_msg_out = json.dumps([command, data, email]).encode("utf-8")
+        user = [email, full_name]
+        success2, msg = f.login_server(database, new, user, password)
 
-            s.send(bytes(json_msg_out))
+        if not success2:
+            print("Login Failed.")
+            print("Goodbye.")
+            s.close()
+            sys.exit(1)
 
-            main_loop(email)
-        else:
-            email = f.get_email()
-            s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
-            main_loop(email)
+        # Connect to Server
+        s.connect((host, port))
+
+        main_loop(email)
+        # s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
+
+        # # msg_rec = [con't:bool, mesg:str]
+        # cont, msg_rec = json.loads(s.recv(1024).decode("utf-8"))
+
+        # if msg_rec == f.LOGIN_COM:
+        #     success, command, new, email, full_name, password = login_loop()
+
+        #     if not success:
+        #         print("Login Failed.")
+        #         print("Goodbye.")
+        #         s.close()
+        #         sys.exit(1)
+
+        #     data = [new, [email, full_name], password]
+        #     json_msg_out = json.dumps([command, data, email]).encode("utf-8")
+
+        #     s.send(bytes(json_msg_out))
+
+        #     main_loop(email)
+        # else:
+        #     email = f.get_email()
+        #     s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
+        #     main_loop(email)
 
     except KeyboardInterrupt:
         pass
