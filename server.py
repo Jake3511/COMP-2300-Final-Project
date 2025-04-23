@@ -23,15 +23,20 @@ def handle_client(connection, client_address, user_database):
         msg_in = connection.recv(1024).decode()
         command, data, username = json.loads(msg_in)
         # recieve message in following form:
-        # [command:str, data:list]
+        # [command:str, data:list, username:str]
+
+        print("command in:", command) # TODO: Delete
 
         if command == "ping":
+            print("ping if!") # TODO: Delete
             if not logged_in:
-                connection.send(bytes(json.dumps(True, f.LOGIN_COM), "utf-8"))
-                return
+                connection.send(bytes(json.dumps([True, f.LOGIN_COM]), "utf-8"))
             else:
-                connection.send(bytes(json.dumps(True, "ping back"), "utf-8"))
-                return
+                connection.send(bytes(json.dumps([True, "ping back"]), "utf-8"))
+            print("Pre-close") # TODO: Delete
+            connection.close()
+            print("Post-close") # TODO: Delete
+            return
 
         if not logged_in:
             print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
@@ -40,8 +45,7 @@ def handle_client(connection, client_address, user_database):
                 new, user, password = data
                 success, message = f.login_server(user_database, new, user, password)
 
-                if success:
-                    logged_in = True
+                logged_in = success
 
                 connection.send(bytes(json.dumps([success, message]), "utf-8"))
             else:
@@ -58,6 +62,7 @@ def handle_client(connection, client_address, user_database):
             connection.send(bytes(json.dumps([True, "Invalid Command."]), "utf-8"))
 
         connection.close()
+        return
 
     except Exception as e:
         print(f"[!] Error with {client_address}: {e}")
@@ -100,7 +105,9 @@ def main():
             target=handle_client, # calls and passes in a few argumanets to handle client
             args=(connection, client_address, user_database) # Our connection(socket), our client_address(ip and port), and our user database
         )
+        print("Pre-thread start") # TODO: Delete
         client_thread.start() # Starts the thread
+        print("Post-thread start") # TODO: Delete
 
 
 #########
