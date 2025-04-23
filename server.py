@@ -37,10 +37,11 @@ def handle_client(connection, client_address, user_database):
             connection.close()
             print("Post-close") # TODO: Delete
             return
+        print("Ping Else!") # TODO: Delete
+
+        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
 
         if not logged_in:
-            print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-
             if command == "login":
                 new, user, password = data
                 success, message = f.login_server(user_database, new, user, password)
@@ -52,8 +53,6 @@ def handle_client(connection, client_address, user_database):
                 connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
             connection.close()
             return
-
-        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
 
         if command in f.ACTION_LIST:
             msg = f.actions_server(user_database, command, username, data)
