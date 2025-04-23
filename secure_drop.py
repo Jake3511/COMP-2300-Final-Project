@@ -26,9 +26,9 @@ def main_loop(username:str)->None:
         print("msg:", msg) # TODO:Delete
         cont, json_msg = json.loads(msg)
 
-        # print rec_msg[1] to command line
+        # print receied message to command line
         if not json_msg == "ping back":
-            print(json_msg[1])
+            print(json_msg)
 
         if cont == False:
             print("Goodbye.")
