@@ -178,3 +178,4 @@ cython_debug/
 .vscode
 *.pem
 *.bin
+.python-version
