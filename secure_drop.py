@@ -95,7 +95,7 @@ if __name__ == "__main__":
             success, command, new, email, full_name, password = login_loop()
 
             if not success:
-                print("Loggin Failed.")
+                print("Login Failed.")
                 print("Goodbye.")
                 s.close()
                 sys.exit(1)
