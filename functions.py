@@ -27,11 +27,13 @@ def actions_server(database:dict, command:str, username:str, data:list)->str:
         case "add":
             email, full_name = data
             added_back = False
+            if CONTACTS not in database[USER][username] or not isinstance(database[USER][username][CONTACTS], list): # Makes it so our dictionary saves as a list for now
+                database[USER][username][CONTACTS] = []
 
             for _, user_email, _ in database[USER][username][CONTACTS]:
                 if email == user_email:
-                    return [True, "Contact Already Added."]
-
+                    return "Contact Already Added."
+            
             try:
                 try:
                     if database[USER][email]:
@@ -42,11 +44,11 @@ def actions_server(database:dict, command:str, username:str, data:list)->str:
                 except KeyError:
                     added_back = False
 
-                database[USER][username][CONTACTS].append([full_name, email, added_back])
+                database[USER][username][CONTACTS].append([full_name, email, added_back]) # Appends the full_name, email, and added_back
 
             except KeyError:
                 database[USER][username][CONTACTS] = []
-                database[USER][username][CONTACTS].append([full_name, email, added_back])
+                database[USER][username][CONTACTS].append([full_name, email, added_back]) # Appends the full_name, email, and added_back to the "list"
 
             return "Contact Added."
 

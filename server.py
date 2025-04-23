@@ -17,54 +17,49 @@ def handle_client(connection, client_address, user_database):
             logged_in = user_database[LOGGED_IN][client_address] # If client is in the database, check if logged in
         except KeyError:
             user_database[LOGGED_IN][client_address] = False # If client has never logged in, set their status to false
+            logged_in = False # Sets login to false
 
-            logged_in = user_database[LOGGED_IN][client_address] # Refresh the login
+        print("CONNECTION ESTABLISHED FROM", client_address) # Prints this if client successfully connects
 
-        msg_in = connection.recv(1024).decode()
-        command, data, username = json.loads(msg_in)
-        # recieve message in following form:
-        # [command:str, data:list, username:str]
+        while True: # Had to re-add this, the reason why we could only have one command at a time before crashing was this(Sorry for removing it orginally :( )
+            msg_in = connection.recv(1024).decode()
+            command, data, username = json.loads(msg_in)
+            command = command.lower()
+            # recieve message in following form:
+            # [command:str, data:list, username:str]
 
-        print("command in:", command) # TODO: Delete
+            print("command in:", command) # TODO: Delete
 
-        if command == "ping":
-            print("ping if!") # TODO: Delete
+            if command == "ping":
+                if not logged_in:
+                    connection.send(bytes(json.dumps([True, f.LOGIN_COM]), "utf-8"))
+                else:
+                    connection.send(bytes(json.dumps([True, "ping back"]), "utf-8"))
+                continue  # wait for next command
+
             if not logged_in:
-                connection.send(bytes(json.dumps([True, f.LOGIN_COM]), "utf-8"))
+                if command == "login":
+                    new, user, password = data
+                    success, message = f.login_server(user_database, new, user, password)
+                    logged_in = success
+                    user_database[LOGGED_IN][client_address] = success
+                    connection.send(bytes(json.dumps([success, message]), "utf-8"))
+                    if success:
+                        user_database[LOGGED_IN][client_address] = True
+                else:
+                    connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
+                continue  # wait for next command
+
+            if command in f.ACTION_LIST:
+                msg = f.actions_server(user_database, command, username, data)
+                connection.send(bytes(json.dumps([True, msg]), "utf-8"))
             else:
-                connection.send(bytes(json.dumps([True, "ping back"]), "utf-8"))
-            print("Pre-close") # TODO: Delete
-            connection.close()
-            print("Post-close") # TODO: Delete
-            return
-        print("Ping Else!") # TODO: Delete
-
-        print("CONNECTION ESTABLISHED FROM", client_address) # This will print out a message when a client connects to the server (Will show the IP and Port)
-
-        if not logged_in:
-            if command == "login":
-                new, user, password = data
-                success, message = f.login_server(user_database, new, user, password)
-
-                logged_in = success
-
-                connection.send(bytes(json.dumps([success, message]), "utf-8"))
-            else:
-                connection.send(bytes(json.dumps([False, "Please Log In."]), "utf-8"))
-            connection.close()
-            return
-
-        if command in f.ACTION_LIST:
-            msg = f.actions_server(user_database, command, username, data)
-            connection.send(bytes(json.dumps([True, msg]), "utf-8"))
-        else:
-            connection.send(bytes(json.dumps([True, "Invalid Command."]), "utf-8"))
-
-        connection.close()
-        return
+                connection.send(bytes(json.dumps([False, "Invalid Command."]), "utf-8"))
 
     except Exception as e:
         print(f"[!] Error with {client_address}: {e}")
+    finally: # Will always close connection
+        print(f"[SERVER] Closing connection for {client_address}")
         connection.close()
 
 

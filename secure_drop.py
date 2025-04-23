@@ -16,11 +16,12 @@ def login_loop()->list:
             return [True, f.LOGIN_COM, ret_user, email, full_name, password]
 
 
-def main_loop(username:str)->None:
+def main_loop(s, username:str)->None:
     print('\nWelcome to SecureDrop')
     print('Type "help" For Commands')
 
     while True:
+        print("We entered this loop")
         msg = s.recv(1024).decode("utf-8")
         print("pre-json.loads") # TODO:Delete
         print("msg:", msg) # TODO:Delete
@@ -105,11 +106,11 @@ if __name__ == "__main__":
 
             s.send(bytes(json_msg_out))
 
-            main_loop(email)
+            main_loop(s, email)
         else:
             email = f.get_email()
             s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
-            main_loop(email)
+            main_loop(s, email)
 
     except KeyboardInterrupt:
         pass
