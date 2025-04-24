@@ -40,12 +40,14 @@ def main_loop(s, username:str)->None:
                 case "list":
                     s.send(bytes(json.dumps(["list", [], username]), "utf-8"))
                 case "send":
-                    file_name = input("\tEnter file name, including path: ")
-                    try:
-                        fc.enc_dec(username, "encrypt", "private", file_name, "./file_to_send.bin")
-                    except FileNotFoundError:
-                        print("File Not Found.")
+                    # TODO: implement
+                    # file_name = input("\tEnter file name, including path: ")
+                    # try:
+                    #     fc.enc_dec(username, "encrypt", "private", file_name, "./file_to_send.bin")
+                    # except FileNotFoundError:
+                    #     print("File Not Found.")
                     # TODO: finish
+                    print('"send" Not Yet Implemented')
                     continue
         else:
             print("Command Not Recognized.")
