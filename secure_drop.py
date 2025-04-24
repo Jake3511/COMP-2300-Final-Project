@@ -81,6 +81,11 @@ if __name__ == "__main__":
         # family, type
         # The SOCK_STREAM means connection-oriented TCP protocol.
 
+        # Get IP and Port from command line, I used 127.0.0.1 10000 for testing
+        if len(sys.argv) != 3: # Checks to see if total number of command line arguments were passed, and if not enough displays error
+            print(f"Usage: python3 {sys.argv[0]} <IP> <PORT>")
+            sys.exit(1)
+
         host = sys.argv[1] #local host
         try:
             port = int(sys.argv[2]) # port number
