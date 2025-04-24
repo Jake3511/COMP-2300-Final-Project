@@ -21,21 +21,6 @@ def main_loop(s, username:str)->None:
     print('Type "help" For Commands')
 
     while True:
-        print("We entered this loop")
-        msg = s.recv(1024).decode("utf-8")
-        print("pre-json.loads") # TODO:Delete
-        print("msg:", msg) # TODO:Delete
-        cont, json_msg = json.loads(msg)
-
-        # print receied message to command line
-        if not json_msg == "ping back":
-            print(json_msg)
-
-        if cont == False:
-            print("Goodbye.")
-            s.close()
-            sys.exit(2)
-
         command = input("\nsecure drop> ").lower()
         if command == "exit":
             print("Goodbye.")
@@ -48,6 +33,7 @@ def main_loop(s, username:str)->None:
                     msg += '\n\t"send" -> Transfer file to contact'
                     msg += '\n\t"exit" -> Exit SecureDrop'
                     print(msg)
+                    continue
                 case "add":
                     full_name, email = f.get_name_and_email()
                     s.send(bytes(json.dumps(["add", [email, full_name], username]), "utf-8"))
@@ -60,10 +46,22 @@ def main_loop(s, username:str)->None:
                     except FileNotFoundError:
                         print("File Not Found.")
                     # TODO: finish
-                    pass
+                    continue
         else:
             print("Command Not Recognized.")
             print('Type "help" For Commands')
+
+        msg = s.recv(1024).decode("utf-8")
+
+        cont, json_msg = json.loads(msg)
+
+        # print receied message to command line
+        print(json_msg)
+
+        if cont == False:
+            print("Goodbye.")
+            s.close()
+            sys.exit(2)
 
 
 #########
@@ -71,13 +69,21 @@ def main_loop(s, username:str)->None:
 #########
 if __name__ == "__main__":
     try:
+        with open(f.DATABASE_CLIENT, "r") as json_data:
+            database = json.loads(json_data.read())
+    except FileNotFoundError:
+        database = {}
+        database[f.USER] = {}
+        f.update_database(database, f.DATABASE_CLIENT)
+
+    try:
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        #family, type
-        #he SOCK_STREAM means connection-oriented TCP protocol.
-        print("Socket connection: success")
+        # family, type
+        # The SOCK_STREAM means connection-oriented TCP protocol.
+
         host = sys.argv[1] #local host
         try:
-            port = int(sys.argv[2]) #port number
+            port = int(sys.argv[2]) # port number
         except ValueError:
             print("Port must be an Integer.")
             sys.exit(1)
@@ -87,30 +93,26 @@ if __name__ == "__main__":
 
         s.connect((host, port)) # connect to Server
 
-        s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
+        success, command, new, email, full_name, password = login_loop()
 
-        # msg_rec = [con't:bool, mesg:str]
-        cont, msg_rec = json.loads(s.recv(1024).decode("utf-8"))
+        if not success:
+            print("Login Failed.")
+            print("Goodbye.")
+            s.close()
+            sys.exit(1)
 
-        if msg_rec == f.LOGIN_COM:
-            success, command, new, email, full_name, password = login_loop()
+        user = [email, full_name]
+        success2, msg = f.login_server(database, new, user, password)
 
-            if not success:
-                print("Login Failed.")
-                print("Goodbye.")
-                s.close()
-                sys.exit(1)
+        f.update_database(database, f.DATABASE_CLIENT)
 
-            data = [new, [email, full_name], password]
-            json_msg_out = json.dumps([command, data, email]).encode("utf-8")
+        if not success2:
+            print("Login Failed.")
+            print("Goodbye.")
+            s.close()
+            sys.exit(1)
 
-            s.send(bytes(json_msg_out))
-
-            main_loop(s, email)
-        else:
-            email = f.get_email()
-            s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
-            main_loop(s, email)
+        main_loop(s, email)
 
     except KeyboardInterrupt:
         pass
