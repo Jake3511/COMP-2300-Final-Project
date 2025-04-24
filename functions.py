@@ -2,16 +2,18 @@ import base64
 import bcrypt
 import datetime as dt
 import key_gen as k
-import json
 import pwinput
 
+
+# TODO: change return user to sending unhashed password
+# TODO: compare unhashed password to hashed password for return users
+    # in login_server
 
 SALT = bcrypt.gensalt() # used to generate a random number
 
 ACTION_LIST = ["help", "add", "list", "send", "exit"]
 
 CONTACTS = "Contacts"
-DATABASE_CLIENT = "./database_client.bin"
 FULL_NAME = "Full_Name"
 LOGIN_COM = "Login"
 LOGINS = "Logins"
@@ -25,53 +27,53 @@ def actions_server(database:dict, command:str, username:str, data:list)->str:
         case "add":
             email, full_name = data
             added_back = False
+            if CONTACTS not in database[USER][username] or not isinstance(database[USER][username][CONTACTS], list): # Makes it so our dictionary saves as a list for now
+                database[USER][username][CONTACTS] = []
 
-            try:
-                if database[USER][username][CONTACTS][email]:
+            for _, user_email, _ in database[USER][username][CONTACTS]:
+                if email == user_email:
                     return "Contact Already Added."
-            except KeyError:
-                pass
-
+            
             try:
-                if not database[USER][email][CONTACTS] == {}:
-                    added_back = True
-                    database[USER][email][CONTACTS][username][1] = True
-                else:
+                try:
+                    if database[USER][email]:
+                        added_back = True
+                        for _, user, added_back_bool in database[USER][email][CONTACTS]:
+                            if email == user:
+                                database[USER][email][CONTACTS][user][2] = True
+                except KeyError:
                     added_back = False
-            except KeyError:
-                added_back = False
 
-            try:
-                database[USER][username][CONTACTS][email] = [full_name, added_back]
+                database[USER][username][CONTACTS].append([full_name, email, added_back]) # Appends the full_name, email, and added_back
+
             except KeyError:
-                database[USER][username][CONTACTS] = {}
-                database[USER][username][CONTACTS][email] = [full_name, added_back]
+                database[USER][username][CONTACTS] = []
+                database[USER][username][CONTACTS].append([full_name, email, added_back]) # Appends the full_name, email, and added_back to the "list"
 
             return "Contact Added."
 
         case "list": # TODO: add online test
-            contacts = list(database[USER][username][CONTACTS].items())
-            if len(contacts) > 0:
+            try:
+                contacts = database[USER][username][CONTACTS]
                 friend = False
                 msg = str()
-                for email, value in contacts:
-                    contact, added_back_bool = value
+                for contact, email, added_back_bool in contacts:
                     if added_back_bool == True:
                         friend = True
                         msg += f"\t* {contact} <{email}>"
-                    if not contacts[-1] == (email, [contact, added_back_bool]):
+                    if not contacts[-1] == [contact, email, added_back_bool]:
                         msg += "\n"
                 if friend:
                     return msg
                 else:
                     return "\tNo Contacts Added You Back"
-            else:
+            except KeyError:
                 return "\tContact List Is Empty."
 
-        case "send": # TODO: add
-            return '\t"send" Not Yet Implemented.'
+        case "send": # TODO: flesh out
+            pass
         case _:
-            return "\tInvalid Command."
+            return [True, "\tInvalid Command."]
 
 
 def comp_str(p1:str, p2:str)->bool:
@@ -79,7 +81,6 @@ def comp_str(p1:str, p2:str)->bool:
 
 
 def get_email(indent="")->str:
-    # TODO: validate password via regex
     while True:
         email1 = input(f"{indent}Enter Email Address: ").lower()
         email2 = input(f"{indent}Enter Email Address Again: ").lower()
@@ -109,12 +110,14 @@ def get_name_and_email(indent="")->list:
     # Get Full Name
     full_name = input(f"{indent}Enter Full Name: ")
     # Get username/email
+    # TODO: validate password via regex
     username = get_email(indent)
 
     return full_name, username
 
 
 def get_password(msg:str)->str:
+    # TODO: add password strength validation?
     password = pwinput.pwinput(prompt=msg, mask="*")
     return get_hashed_password(password)
 
@@ -136,7 +139,7 @@ def login_client()->list:
         if new:
             success, email, full_name, password = new_user()
         else:
-            email = input("Enter Your Email: ").lower()
+            email = input("Enter Your Email: ")
             full_name = None
             password = get_password("Enter Password: ")
 
@@ -232,7 +235,3 @@ def new_user()->list:
     print("Passwords Match.")
     return [True, username, full_name, passwd1]
 
-
-def update_database(database:dict, file_name)->None:
-    with open(file_name, "w") as db_file:
-        db_file.write(json.dumps(database))
