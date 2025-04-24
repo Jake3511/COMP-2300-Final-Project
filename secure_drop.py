@@ -52,8 +52,7 @@ def main_loop(username:str)->None:
             print('Type "help" For Commands')
 
         msg = s.recv(1024).decode("utf-8")
-        print("pre-json.loads") # TODO:Delete
-        print("msg:", msg) # TODO:Delete
+
         cont, json_msg = json.loads(msg)
 
         # print receied message to command line
@@ -70,8 +69,13 @@ def main_loop(username:str)->None:
 # Start #
 #########
 if __name__ == "__main__":
-    database = {}
-    database[f.USER] = {}
+    try:
+        with open(f.DATABASE_CLIENT, "r") as json_data:
+            database = json.loads(json_data.read())
+    except FileNotFoundError:
+        database = {}
+        database[f.USER] = {}
+        f.update_database(database, f.DATABASE_CLIENT)
 
     try:
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -99,6 +103,8 @@ if __name__ == "__main__":
         user = [email, full_name]
         success2, msg = f.login_server(database, new, user, password)
 
+        f.update_database(database, f.DATABASE_CLIENT)
+
         if not success2:
             print("Login Failed.")
             print("Goodbye.")
@@ -109,30 +115,6 @@ if __name__ == "__main__":
         s.connect((host, port))
 
         main_loop(email)
-        # s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
-
-        # # msg_rec = [con't:bool, mesg:str]
-        # cont, msg_rec = json.loads(s.recv(1024).decode("utf-8"))
-
-        # if msg_rec == f.LOGIN_COM:
-        #     success, command, new, email, full_name, password = login_loop()
-
-        #     if not success:
-        #         print("Login Failed.")
-        #         print("Goodbye.")
-        #         s.close()
-        #         sys.exit(1)
-
-        #     data = [new, [email, full_name], password]
-        #     json_msg_out = json.dumps([command, data, email]).encode("utf-8")
-
-        #     s.send(bytes(json_msg_out))
-
-        #     main_loop(email)
-        # else:
-        #     email = f.get_email()
-        #     s.send(bytes(json.dumps(["ping", [], None]), "utf-8"))
-        #     main_loop(email)
 
     except KeyboardInterrupt:
         pass
