@@ -25,6 +25,13 @@ def actions_server(database:dict, command:str, username:str, data:list)->str:
         case "add":
             email, full_name = data
             added_back = False
+
+            try:
+                database[USER][username][CONTACTS]
+            except KeyError:
+                database[USER][username] = {}
+                database[USER][username][CONTACTS] = {}
+
             try:
                 if database[USER][username][CONTACTS][email]:
                     return "Contact Already Added."
