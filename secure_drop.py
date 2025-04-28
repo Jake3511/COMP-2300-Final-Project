@@ -52,6 +52,7 @@ def main_loop(s, username:str)->None:
         else:
             print("Command Not Recognized.")
             print('Type "help" For Commands')
+            continue
 
         msg = s.recv(1024).decode("utf-8")
 
